@@ -627,7 +627,7 @@ const detailTxt = (d, aksi) => {
 };
 
 /* ===================== API (nama sama dengan fungsi di Code.gs) ===================== */
-let LAST_SYNC = '';
+let LAST_SYNC = '', LAST_SLIP = '';
 const API = {
   async login(email, pw) {
     const e = String(email || '').trim().toLowerCase();
@@ -644,7 +644,8 @@ const API = {
   async getAllData() {
     const [c, cfg, att] = await Promise.all([me_(), settings_(), sb.from('lampiran').select('*').order('ts', { ascending: false })]);
     const tabs = c.tabs.filter(t => t !== 'backup');
-    if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); } // Rekap Harian hari ini ikut terisi dari CCF
+    if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); }
+    if (tabs.indexOf('slip') >= 0 && LAST_SLIP !== todayIso_()) { try { await sb.rpc('app_sync_slip'); } catch (e) { /* abaikan */ } LAST_SLIP = todayIso_(); } // slip bulan lalu + bulan ini ikut timesheet // Rekap Harian hari ini ikut terisi dari CCF
     const keys = Object.keys(TBL).filter(k => tabs.indexOf(k) >= 0 || k === 'clients');
     const res = await Promise.all(keys.map(k => read_(k).then(rows => [k, rows])));
     const out = { role: c.role, email: c.email, origin: '', canSwitch: false, tabs: tabs, canDel: !!c.canDel, delTabs: c.delTabs || [], canPrev: !!c.canPrev, settings: cfg, waAuto: false, pendingPw: 0, backup: null };
@@ -883,7 +884,15 @@ const API = {
   async backupNow() { return NA('Backup manual'); },
   async backupStatus() { return { last: '', status: '', trigger: false, log: [], lampiran: 0, mirrored: 0, folderUrl: '', email: '', local: '', lastFail: '' }; },
   async downloadBackupXlsx() { throw new Error('Unduh backup belum tersedia di versi Supabase.'); },
-  async buatSlipDariTimesheet() { return NA('Pembuatan slip dari timesheet'); },
+  async buatSlipDariTimesheet(client, ym) {
+    const c = await me_(); if (c.tabs.indexOf('slip') < 0) throw denied();
+    if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) throw new Error('Pilih satu bulan penuh untuk membuat slip dari timesheet.');
+    const r = await sb.rpc('app_sync_slip', { p_ym: ym, p_client: client || 'ALL' });
+    if (r.error) fail(r.error);
+    const d = r.data || {}, label = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][Number(ym.slice(5)) - 1] + ' ' + ym.slice(0, 4);
+    return { success: true, baru: d.baru, ada: d.manual, tanpaTarif: d.tanpaTarif, periode: label,
+      message: 'Slip ' + label + ' dari timesheet: ' + d.baru + ' dibuat, ' + d.ubah + ' diperbarui, ' + d.manual + ' diubah manual (tidak ditimpa)' + (d.tanpaTarif ? '. ' + d.tanpaTarif + ' slip belum punya tarif Gaji Hari: buka Ubah dan isi nominalnya sekali, bulan berikutnya otomatis.' : '.') };
+  },
   async syncDailyNow() {
     const c = await me_(); if (c.tabs.indexOf('dailyLogs') < 0) throw denied();
     const r = await sb.rpc('app_sync_daily');
