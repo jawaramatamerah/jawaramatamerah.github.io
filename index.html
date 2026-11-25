@@ -1563,6 +1563,11 @@ function render() {
   if (cur === 'invoice') { const ix = new Map((DB.invoice || []).map((r, i) => [r, i])); rows.sort((x, y) => String(y.ts || '').localeCompare(String(x.ts || '')) || ix.get(y) - ix.get(x)); }
   else if (t.date) rows.sort((x, y) => String(y[t.date]).localeCompare(String(x[t.date])));
   else if (cur === 'slip') rows.sort((x, y) => slipYm(y).localeCompare(slipYm(x)) || String(x.nama).localeCompare(String(y.nama)));
+  if (cur === 'units') {
+    const lastB = u => (DB.bast || []).filter(x => x.client === u.client && platKey_(x.plat) === platKey_(u.plat)).sort((x, y) => String(y.tanggal).localeCompare(String(x.tanggal)) || String(y.noBast).localeCompare(String(x.noBast)))[0];
+    const kb = new Map(rows.map(u => [u, lastB(u)]));
+    rows.sort((x, y) => { const a = kb.get(x), b = kb.get(y); if (!a !== !b) return a ? -1 : 1; if (!a) return String(x.plat).localeCompare(String(y.plat)); return String(a.tanggal).localeCompare(String(b.tanggal)) || String(a.noBast).localeCompare(String(b.noBast)); });
+  }
   // CCF: semua Mobilization di atas, lalu Demobilization (tiap kelompok: tanggal terbaru dulu, No naik)
   const grp = cur === 'ccf' ? r => (isDemob(r) ? 'DEMOBILIZATION' : 'MOBILIZATION') : null;
   if (grp) rows.sort((x, y) => (isDemob(x) - isDemob(y)) || String(y.date).localeCompare(String(x.date)) || ((Number(x.no) || 0) - (Number(y.no) || 0)));
