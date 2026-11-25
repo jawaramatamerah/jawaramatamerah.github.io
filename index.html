@@ -260,7 +260,7 @@
         <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Ekspor
         <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <div id="expMenu" class="hidden absolute left-0 top-full mt-2 min-w-[200px] rounded-xl bg-[#141828] border border-[#2b3150] shadow-xl p-1.5 z-30">
+      <div id="expMenu" class="hidden absolute left-0 top-full mt-2 min-w-[250px] rounded-xl bg-[#141828] border border-[#2b3150] shadow-xl p-1.5 z-30">
     <button id="btnPv" type="button" title="Pratinjau PDF tabel yang sedang tampil (ikut filter), tanpa mengunduh" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       Pratinjau
@@ -273,29 +273,29 @@
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       Export Excel
     </button>
-      </div>
-    </div>
-    <button id="btnSync" type="button" title="Isi Rekap Harian otomatis dari CCF Mobilization" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
-      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 2v4h-4M6 22v-4h4"/></svg>
-      Sinkron dari CCF
-    </button>
-    <button id="btnSlipTs" type="button" title="Buat slip gaji per driver dari Timesheet (Rekap Harian) untuk bulan yang dipilih" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">Buat Slip dari Timesheet</button>
-    <button id="btnCcf" type="button" title="Download form CCF Medco (format Crew Change Form) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
+    <button id="btnCcf" type="button" title="Download form CCF Medco (format Crew Change Form) sesuai filter yang aktif" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       Download Form CCF
     </button>
-    <button id="btnCcfPv" type="button" title="Pratinjau form CCF Medco (PDF) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
+    <button id="btnCcfPv" type="button" title="Pratinjau form CCF Medco (PDF) sesuai filter yang aktif" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       Pratinjau PDF CCF
     </button>
-    <button id="btnSlipPv" type="button" title="Pratinjau slip gaji (PDF) sesuai filter yang aktif; bisa geser ke slip berikutnya" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
+    <button id="btnSync" type="button" title="Isi Rekap Harian otomatis dari CCF Mobilization" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 2v4h-4M6 22v-4h4"/></svg>
+      Sinkron dari CCF
+    </button>
+    <button id="btnSlipTs" type="button" title="Buat slip gaji per driver dari Timesheet (Rekap Harian) untuk bulan yang dipilih" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50"><svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M9 14h6M9 17h4"/></svg>Buat Slip dari Timesheet</button>
+    <button id="btnSlipPv" type="button" title="Pratinjau slip gaji (PDF) sesuai filter yang aktif; bisa geser ke slip berikutnya" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       Pratinjau Slip Gaji
     </button>
-    <button id="btnAll" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
+    <button id="btnAll" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#1b2033] disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg>
       Kirim Semua Slip
     </button>
+      </div>
+    </div>
     <button id="btnSwap" type="button" class="inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#2b3150] text-slate-200 hover:bg-[#1b2033] text-sm font-medium disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
       Quick Swap Roster
@@ -3962,7 +3962,7 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
       g('avatar').textContent = (DB.email[0] || '?').toUpperCase();
       g('roleChip').textContent = ROLE_LBL[DB.role] || DB.role || '';
     }
-    g('expWrap').classList.toggle('hidden', !['btnPv', 'btnPdf', 'btnXls'].some(id => !g(id).classList.contains('hidden')));
+    g('expWrap').classList.toggle('hidden', !['btnPv', 'btnPdf', 'btnXls', 'btnCcf', 'btnCcfPv', 'btnSync', 'btnSlipTs', 'btnSlipPv', 'btnAll'].some(id => !g(id).classList.contains('hidden')));
     g('kpiSec').classList.toggle('hidden', !g('cards').children.length);
     applyKpi();
     // kolom rupiah rata kanan
