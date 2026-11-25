@@ -3314,6 +3314,7 @@ async function act(a, id) {
   if (a === 'bk') return backupNowUi();
   if (a === 'hari') return simpanHariUi();
   if (a === 'bkdl') return backupDownloadUi();
+  if (a === 'imp') return impLampiranUi();
 }
 async function openDetail(row) {
   if (!row) return;
@@ -3341,7 +3342,7 @@ function backupHtml(s) {
     `<div class="${c}"><p class="${lb}">Unduhan lokal terakhir</p><p class="font-bold text-slate-200 mt-1">${esc(s.local || 'Belum pernah')}</p></div>` +
     `<div class="${c}"><p class="${lb}">Lampiran / foto tersalin ke folder backup</p><p class="font-bold text-slate-200 mt-1">${Number(s.mirrored) || 0} dari ${Number(s.lampiran) || 0}</p></div>` +
     `<div class="${c}"><p class="${lb}">Email notifikasi</p><p class="font-bold text-slate-200 mt-1 break-all">${esc(s.email || 'Creator / ALERT_EMAIL')}</p></div></div>` +
-    `<div class="flex flex-wrap gap-2"><button type="button" data-a="bk" data-id="" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg">Backup sekarang</button><button type="button" data-a="bkdl" data-id="" class="px-4 py-2.5 bg-teal-700 hover:bg-teal-600 font-bold rounded-lg">Unduh backup ke laptop (.xlsx)</button><button type="button" data-a="hari" data-id="" class="px-4 py-2.5 bg-sky-700 hover:bg-sky-600 font-bold rounded-lg">Simpan data hari ini ke Drive</button>${s.folderUrl ? `<a href="${esc(s.folderUrl)}" target="_blank" rel="noopener" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 font-bold rounded-lg">Buka folder backup di Drive</a>` : ''}</div>` +
+    `<div class="flex flex-wrap gap-2"><button type="button" data-a="bk" data-id="" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg">Backup sekarang</button><button type="button" data-a="bkdl" data-id="" class="px-4 py-2.5 bg-teal-700 hover:bg-teal-600 font-bold rounded-lg">Unduh backup ke laptop (.xlsx)</button><button type="button" data-a="imp" data-id="" class="px-4 py-2.5 bg-violet-700 hover:bg-violet-600 font-bold rounded-lg">Impor lampiran lama (Drive)</button><button type="button" data-a="hari" data-id="" class="px-4 py-2.5 bg-sky-700 hover:bg-sky-600 font-bold rounded-lg">Simpan data hari ini ke Drive</button>${s.folderUrl ? `<a href="${esc(s.folderUrl)}" target="_blank" rel="noopener" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 font-bold rounded-lg">Buka folder backup di Drive</a>` : ''}</div>` +
     `<div class="text-xs text-slate-400 space-y-1"><p>Backup otomatis: salinan seluruh database (Google Sheets) dan sinkron lampiran / foto driver (Google Drive) ke folder "Backup JMM Dashboard". Kalau gagal, notifikasi dikirim lewat email dan WA Bos.</p><p>Ke laptop: apps Script tidak bisa menulis langsung ke komputer. Pasang Google Drive untuk Desktop dan pilih folder "Backup JMM Dashboard" agar tersinkron otomatis, atau pakai tombol unduh di atas.</p></div>` +
     `<div><p class="text-xs font-semibold text-slate-300 mb-2">Riwayat backup</p><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th class="py-1 pr-3">Waktu</th><th class="pr-3">Jenis</th><th class="pr-3">Status</th><th class="pr-3">Detail</th><th>Detik</th></tr></thead><tbody class="divide-y divide-[#16213d]">${(s.log || []).length ? s.log.map(l => `<tr><td class="py-1 pr-3 whitespace-nowrap">${esc(l.waktu)}</td><td class="pr-3">${esc(l.jenis)}</td><td class="pr-3 ${/gagal/i.test(l.status) ? 'text-red-300' : 'text-emerald-300'}">${esc(l.status)}</td><td class="pr-3 break-words">${esc(l.detail)}</td><td>${l.dtk}</td></tr>`).join('') : '<tr><td colspan="5" class="py-3 text-slate-500">Belum ada riwayat.</td></tr>'}</tbody></table></div></div></div>`;
 }
@@ -3363,6 +3364,38 @@ async function simpanHariUi() {
   try { const r = await call('simpanHarianNow'); toast(r.message, !r.success); }
   catch (e) { toast(e.message || String(e), true); }
 }
+
+/* ---------- Impor lampiran lama (Google Drive) ---------- */
+const IMP_MANIFEST = [["Invoice_BUKK_002-INV-JMM-BUKAKA-XI-2026_2026-11.jpg", "invoice", "INV-005"], ["Invoice_BUKK_001-INV-JMM-BUKAKA-XI-2026_2026-11.jpg", "invoice", "INV-004"], ["Invoice_BUKK_004-INV-JMM-BUKAKA-XI-2026_2026-11.jpg", "invoice", "INV-002"], ["Invoice_BUKK_003-INV-JMM-BUKAKA-XI-2026_2026-11.jpg", "invoice", "INV-001"], ["PO_PT.-Ajib-Jaya-Grup_001-PO-JMM-AJG-XI-2026_2026-11.pdf", "po", "PO-bae4a9c1"], ["PO_BUKK_P.BUKK-2026-06798_2026-09.pdf", "po", "PO-001"], ["PO_BUKK_P.BUKK-2026-06887_2026-09.pdf", "po", "PO-003"], ["PO_BUKK_P.BUKK-2026-06867_2026-09.pdf", "po", "PO-002"], ["PO_BUKK_P.BUKK-2026-07550_2026-10.pdf", "po", "PO-004"], ["PO_BUKK_P.BUKK-2026-08305_2026-11.pdf", "po", "PO-005"], ["PO_BUKK_P.BUKK-2026-08305_2026-11_2.pdf", "po", "PO-005"], ["Penawaran_PT-Ulima-Nitra-Tbk_001-PW-JMM-UN-XI-2026_2026-11.pdf", "penawaran", "PNW-8f037eb6"], ["Penawaran_PT-Ulima-Nitra-Tbk_002-PW-JMM-UN-XI-2026_2026-11.pdf", "penawaran", "PNW-9e57044f"], ["BAST_BUKK_001-BA-JMM-IX-2026_2026-09.pdf", "bast", "BAST-dcf65b80"], ["BAST_BUKK_002-BA-JMM-IX-2026_2026-09.pdf", "bast", "BAST-34b1835e"], ["BAST_BUKK_003-BA-JMM-X-2026_2026-10.pdf", "bast", "BAST-7726414d"], ["BAST_BUKK_004-BA-JMM-X-2026_2026-10.pdf", "bast", "BAST-967b56f4"]];
+async function impLampiranUi() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.multiple = true; inp.accept = '.pdf,.jpg,.jpeg,.png';
+  inp.onchange = async () => {
+    const files = Array.from(inp.files || []); if (!files.length) return;
+    const byName = {}; IMP_MANIFEST.forEach(m => { byName[m[0]] = m; });
+    const total = {}; IMP_MANIFEST.forEach(m => { const k = m[1] + '|' + m[2]; total[k] = (total[k] || 0) + 1; });
+    const have = k => (DB.lampiran || []).filter(a => a.tabel + '|' + a.idData === k).length;
+    const ok = [], skip = [], bad = [], unk = [];
+    toast('Mengimpor ' + files.length + ' file, mohon tunggu...');
+    for (const f of files) {
+      const m = byName[f.name];
+      if (!m) { unk.push(f.name); continue; }
+      const key = m[1] + '|' + m[2];
+      if (have(key) >= total[key]) { skip.push(f.name); continue; }
+      try {
+        const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Gagal membaca file')); r.readAsDataURL(f); });
+        const r = await call('uploadAttachment', m[1], m[2], f.name, b64);
+        if (r && r.success !== false) { ok.push(f.name); DB.lampiran = (DB.lampiran || []).concat([{ tabel: m[1], idData: m[2] }]); } else bad.push(f.name + ': ' + ((r && r.message) || 'gagal'));
+      } catch (e) { bad.push(f.name + ': ' + (e.message || e)); }
+    }
+    const msg = 'Impor selesai: ' + ok.length + ' berhasil' + (skip.length ? ', ' + skip.length + ' sudah ada (dilewati)' : '') + (unk.length ? ', ' + unk.length + ' file tidak dikenali' : '') + (bad.length ? ', ' + bad.length + ' GAGAL' : '') + '.';
+    toast(msg, bad.length > 0);
+    if (bad.length) alert(msg + '\n\n' + bad.join('\n'));
+    if (unk.length) console.log('File tidak dikenali:', unk);
+    BK_CACHE = null; await load();
+  };
+  inp.click();
+}
+
 async function backupDownloadUi() {
   try { const r = await call('downloadBackupXlsx'); saveBlob(b64Blob(r.b64, r.mime), r.name); toast('Backup diunduh: ' + r.name); BK_CACHE = null; await load(); }
   catch (e) { toast(e.message || String(e), true); }
