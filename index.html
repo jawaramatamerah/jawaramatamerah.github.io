@@ -20,134 +20,210 @@
   input.dfull { color-scheme: dark; }
   input.dfull::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
 </style>
-</head>
-<body class="bg-[#050914] text-slate-100 min-h-screen font-sans text-sm">
 
-<!-- Header -->
-<header class="relative z-40 bg-[#0a1124] border-b border-[#16213d] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-  <div class="flex items-center gap-3">
-    <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-14 w-auto rounded-lg">
-    <div>
-      <h1 class="text-xl font-bold text-red-500 leading-tight">CV. Jawara Mata Merah</h1>
-      <p id="addr" class="text-[11px] text-slate-400"></p>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0a1124; --surf:#111c38; --line:#1d2b4c; --line2:#27375e; --hov:#16233f; --accent:#dc2626; }
+  html, body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); }
+  .icon-btn { display:inline-grid; place-items:center; width:40px; height:40px; border-radius:10px; color:#cbd5e1; flex:none; }
+  .icon-btn:hover { background: var(--hov); }
+  /* Sidebar */
+  #sidebar { width: 264px; max-width: 86vw; border-right: 1px solid var(--line); }
+  @media (min-width: 768px) { .sb-collapsed #sidebar { width: 72px; } .sb-collapsed .sb-label { display: none; } .sb-collapsed #sbChev { transform: rotate(180deg); } .sb-collapsed #sidebar > div:first-child { justify-content: center; padding: 0; } .sb-collapsed #sbCollapse { padding: 0; justify-content: center; } .sb-collapsed .nav-add { display: none; } .sb-collapsed .nav-gh { height: 1px; margin: 6px 12px; background: var(--line); } .sb-collapsed .nav-item { justify-content: center; padding: 0; } }
+  .nav-gh { padding: 0 12px; margin-bottom: 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+  .nav-row { position: relative; display: flex; align-items: center; border-radius: 10px; }
+  .nav-row:hover { background: var(--hov); }
+  .nav-item { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 40px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: #cbd5e1; text-align: left; }
+  .nav-row.on { background: rgba(220,38,38,.14); }
+  .nav-row.on .nav-item { color: #fff; font-weight: 600; }
+  .nav-row.on::before { content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+  .nav-add { flex: none; display: grid; place-items: center; width: 32px; height: 32px; margin-right: 4px; border-radius: 8px; color: #94a3b8; }
+  .nav-add:hover { background: rgba(255,255,255,.08); color: #fff; }
+  @media (hover: hover) and (min-width: 768px) { .nav-add { opacity: 0; } .nav-row:hover .nav-add, .nav-add:focus-visible { opacity: 1; } }
+  .nav-item:focus-visible, .nav-add:focus-visible, .pm-item:focus-visible, button:focus-visible { outline: 2px solid #f87171; outline-offset: 2px; }
+  .pm-item { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: #e2e8f0; }
+  .pm-item:hover { background: var(--hov); }
+  /* Kartu ringkasan ringkas */
+  .kpi { background: var(--surf); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+  .kpi-l { font-size: 12px; color: #94a3b8; line-height: 1.3; }
+  .kpi-v { font-size: 20px; font-weight: 700; margin-top: 2px; line-height: 1.25; font-variant-numeric: tabular-nums; word-break: break-word; }
+  .kpi-s { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+  /* Tabel */
+  #view table { font-variant-numeric: tabular-nums; }
+  #view thead tr { background: rgba(255,255,255,.025); }
+  .empty-state { padding: 56px 16px; text-align: center; color: #94a3b8; }
+  @keyframes jspin { to { transform: rotate(360deg); } }
+  /* Input tanggal dll di filter */
+  #filters select, #filters input { min-height: 40px; }
+  @media (max-width: 767px) { #actions > *, #actions > #expWrap > button { } #actions #btnAdd { flex: 1 1 100%; justify-content: center; } }
+</style>
+</head>
+<body class="bg-[#0a1124] text-slate-100 min-h-screen font-sans text-sm antialiased">
+
+<div id="shell" class="flex min-h-screen">
+<div id="sbOverlay" class="hidden fixed inset-0 z-[44] bg-black/60 md:hidden"></div>
+
+<!-- Sidebar: satu-satunya navigasi -->
+<aside id="sidebar" class="fixed md:sticky top-0 left-0 z-[45] h-screen flex flex-col bg-[#111c38] -translate-x-full md:translate-x-0 transition-transform duration-200" aria-label="Navigasi">
+  <div class="flex items-center gap-3 px-4 h-16 flex-none">
+    <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-9 w-auto rounded-md flex-none">
+    <div class="sb-label min-w-0">
+      <p class="text-sm font-semibold leading-tight truncate">Jawara Mata Merah</p>
+      <p id="addr" class="text-[11px] text-slate-400 truncate"></p>
     </div>
+    <button type="button" id="btnMenuX" class="md:hidden ml-auto icon-btn" aria-label="Tutup menu"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
-  <div class="flex flex-wrap items-center gap-2">
-    <div id="menus" class="flex flex-wrap items-center gap-2"></div>
-    <div class="flex items-center gap-2 rounded-lg border border-[#1f2c4d] bg-[#050914] px-3 py-2">
-      <svg class="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      <span id="clock" class="font-mono text-xs text-slate-100"></span>
+  <nav id="tabs" class="flex-1 overflow-y-auto px-3 py-2 space-y-5" aria-label="Menu utama"></nav>
+  <div id="menus" class="hidden"></div>
+  <button type="button" id="sbCollapse" class="hidden md:flex items-center gap-3 px-6 h-12 flex-none text-xs text-slate-400 hover:text-white border-t border-[#1d2b4c]" aria-label="Ciutkan sidebar">
+    <svg id="sbChev" class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg><span class="sb-label">Ciutkan</span>
+  </button>
+</aside>
+
+<div class="flex-1 min-w-0 flex flex-col">
+<!-- Header ramping -->
+<header class="sticky top-0 z-30 h-16 flex-none flex items-center gap-3 px-4 sm:px-6 bg-[#0a1124]/95 backdrop-blur border-b border-[#1d2b4c]">
+  <button type="button" id="btnMenu" class="md:hidden icon-btn" aria-label="Buka menu"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <h1 id="hdrTitle" class="text-base sm:text-lg font-semibold truncate">CV. Jawara Mata Merah</h1>
+  <div class="ml-auto flex items-center gap-2 sm:gap-4">
+    <div class="flex items-center gap-1.5 text-slate-300">
+      <svg class="w-4 h-4 text-slate-400 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span id="clock" class="font-mono text-[11px] sm:text-xs tabular-nums"></span>
     </div>
-    <div id="userBox" class="hidden items-center gap-3 rounded-lg border border-[#1f2c4d] bg-[#050914] px-3 py-2 text-xs">
-      <span id="userInfo" class="text-slate-300"></span>
-      <button type="button" id="btnInstall" class="hidden text-emerald-300 hover:underline">Pasang Aplikasi</button>
-      <button type="button" id="btnSw" class="hidden text-amber-300 hover:underline">Ganti Akun</button>
-      <button type="button" id="btnPw" class="text-sky-300 hover:underline">Ganti Password</button>
-      <button type="button" id="btnOut" class="text-red-300 hover:underline">Keluar</button>
+    <div id="userBox" class="hidden relative items-center">
+      <button type="button" id="btnProfile" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-[#16233f]">
+        <span id="avatar" class="w-8 h-8 rounded-full bg-red-600/20 text-red-200 grid place-items-center text-sm font-semibold">?</span>
+        <span id="roleChip" class="hidden sm:block text-xs text-slate-300 max-w-[150px] truncate"></span>
+        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="profileMenu" class="hidden absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl bg-[#111c38] border border-[#27375e] shadow-xl p-1.5 z-50">
+        <div class="px-3 py-2.5"><span id="userInfo" class="block text-xs text-slate-300 break-words"></span></div>
+        <div class="my-1 border-t border-[#1d2b4c]"></div>
+        <button type="button" id="btnSw" class="hidden pm-item text-amber-300">Ganti Akun</button>
+        <button type="button" id="btnPw" class="pm-item">Ganti Password</button>
+        <button type="button" id="btnInstall" class="hidden pm-item text-emerald-300">Pasang Aplikasi</button>
+        <div class="my-1 border-t border-[#1d2b4c]"></div>
+        <button type="button" id="btnOut" class="pm-item text-red-300">Keluar</button>
+      </div>
     </div>
   </div>
 </header>
 
-<main class="px-4 sm:px-8 py-6 space-y-6 max-w-[1700px] mx-auto">
+<main class="px-4 sm:px-6 lg:px-8 py-5 space-y-4 max-w-[1600px] w-full mx-auto">
 
-  <!-- Kartu ringkasan -->
-  <div id="cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
+  <div id="alertBar" class="hidden bg-red-950/50 text-red-200 rounded-lg px-4 py-2.5 text-xs"></div>
 
-  <div id="alertBar" class="hidden bg-red-950/60 border border-red-800 text-red-200 rounded-lg px-4 py-2 text-xs"></div>
-
-  <!-- Dashboard Keuangan (pemasukan) dan penggunaan driver/unit (CCF) -->
-  <div id="dashBox" class="hidden gap-4 lg:grid-cols-2"></div>
-
-  <!-- Navigasi tab + tukar roster -->
-  <section class="rounded-2xl border border-[#16213d] bg-[#0a1124] p-4 space-y-4">
-    <nav id="tabs" class="flex flex-wrap gap-1 rounded-xl border border-[#16213d] bg-[#050914] p-1.5"></nav>
-    <button id="btnSwap" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 rounded-lg px-4 py-2.5 text-sm font-semibold">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
-      Quick Swap Roster
+  <!-- Ringkasan (bisa dilipat) -->
+  <section id="kpiSec">
+    <button type="button" id="btnKpi" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-100" aria-expanded="true">
+      <svg id="kpiChev" class="w-3.5 h-3.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Ringkasan
     </button>
+    <div id="kpiBody" class="mt-2 space-y-3">
+      <div id="cards" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3"></div>
+      <!-- Dashboard Keuangan (pemasukan) dan penggunaan driver/unit (CCF) -->
+      <div id="dashBox" class="hidden gap-4 lg:grid-cols-2"></div>
+    </div>
   </section>
 
-  <!-- Judul tabel + filter -->
-  <section class="rounded-2xl border border-[#16213d] bg-[#0a1124] px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-    <div class="flex items-center gap-3 text-amber-400">
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-      <h2 id="ttl" class="font-bold text-lg"></h2>
+  <!-- Judul halaman, filter, aksi -->
+  <section id="pageHead" class="space-y-3">
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <h2 id="ttl" class="text-lg sm:text-xl font-semibold"></h2>
       <span id="count" class="text-xs text-slate-400 font-normal"></span>
     </div>
     <div id="filters" class="flex flex-wrap items-center gap-2">
-      <select id="cf" class="bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-2.5 text-sm"></select>
+      <select id="cf" class="bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"></select>
       <div id="xf" class="contents"></div>
-      <select id="tf" title="Filter tipe CCF" class="hidden bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-2.5 text-sm"><option value="ALL">Semua Tipe (Mob + Demob)</option><option value="MOB">Mobilization saja</option><option value="DEMOB">Demobilization saja</option></select>
-      <select id="rf" title="Filter roster" class="hidden bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-2.5 text-sm"></select>
-      <span id="dates" class="hidden flex-wrap items-center gap-2 bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-1.5 text-xs text-slate-400">
+      <select id="tf" title="Filter tipe CCF" class="hidden bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"><option value="ALL">Semua Tipe (Mob + Demob)</option><option value="MOB">Mobilization saja</option><option value="DEMOB">Demobilization saja</option></select>
+      <select id="rf" title="Filter roster" class="hidden bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"></select>
+      <span id="dates" class="hidden flex-wrap items-center gap-2 bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-1.5 text-xs text-slate-400">
         <span id="dlabel">Periode:</span>
-        <select id="dp" title="Pilih periode cepat (tanggal, minggu, bulan, tahun) atau Kustom untuk rentang sendiri" class="bg-[#0a1124] border border-[#1f2c4d] rounded-md px-2 py-1 text-xs text-slate-200"><option value="semua">Semua waktu</option><option value="hari">Hari ini</option><option value="minggu">Minggu ini</option><option value="bulan">Bulan ini</option><option value="lalu">Bulan lalu</option><option value="tahun">Tahun ini</option><option value="kustom">Kustom</option></select>
-        <select id="km" title="Dasar penyaringan kontrak" class="hidden bg-[#0a1124] border border-[#1f2c4d] rounded-md px-2 py-1 text-xs text-slate-200"><option value="irisan">Masa berlaku (irisan periode)</option><option value="mulai">Tanggal mulai</option><option value="akhir">Tanggal berakhir</option></select>
-        <label class="relative inline-flex items-center gap-1.5 rounded-md border border-[#1f2c4d] px-2 py-1 text-sm cursor-pointer hover:bg-[#0d1830]"><span class="text-slate-500">dd/mm/yyyy</span><svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="d1" type="date" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></label>
+        <select id="dp" title="Pilih periode cepat (tanggal, minggu, bulan, tahun) atau Kustom untuk rentang sendiri" class="bg-[#111c38] border border-[#27375e] rounded-md px-2 py-1 text-xs text-slate-200"><option value="semua">Semua waktu</option><option value="hari">Hari ini</option><option value="minggu">Minggu ini</option><option value="bulan">Bulan ini</option><option value="lalu">Bulan lalu</option><option value="tahun">Tahun ini</option><option value="kustom">Kustom</option></select>
+        <select id="km" title="Dasar penyaringan kontrak" class="hidden bg-[#111c38] border border-[#27375e] rounded-md px-2 py-1 text-xs text-slate-200"><option value="irisan">Masa berlaku (irisan periode)</option><option value="mulai">Tanggal mulai</option><option value="akhir">Tanggal berakhir</option></select>
+        <label class="relative inline-flex items-center gap-1.5 rounded-md border border-[#27375e] px-2 py-1 text-sm cursor-pointer hover:bg-[#16233f]"><span class="text-slate-400">dd/mm/yyyy</span><svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="d1" type="date" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></label>
         s/d
-        <label class="relative inline-flex items-center gap-1.5 rounded-md border border-[#1f2c4d] px-2 py-1 text-sm cursor-pointer hover:bg-[#0d1830]"><span class="text-slate-500">dd/mm/yyyy</span><svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="d2" type="date" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></label>
+        <label class="relative inline-flex items-center gap-1.5 rounded-md border border-[#27375e] px-2 py-1 text-sm cursor-pointer hover:bg-[#16233f]"><span class="text-slate-400">dd/mm/yyyy</span><svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="d2" type="date" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></label>
       </span>
-      <div class="flex items-center gap-2 bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-2.5 w-full sm:w-72">
+      <div class="flex items-center gap-2 bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 w-full sm:w-72">
         <svg class="w-4 h-4 text-slate-400 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Cari..." class="bg-transparent outline-none text-sm w-full">
       </div>
     </div>
-    <button id="btnPv" type="button" title="Pratinjau PDF tabel yang sedang tampil (ikut filter), tanpa mengunduh" class="hidden inline-flex items-center gap-2 bg-sky-700 hover:bg-sky-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      Pratinjau
-    </button>
-    <button id="btnPdf" type="button" class="inline-flex items-center gap-2 bg-rose-700 hover:bg-rose-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-      Export PDF
-    </button>
-    <button id="btnXls" type="button" class="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-      Export Excel
-    </button>
-    <button id="btnCcf" type="button" title="Download form CCF Medco (format Crew Change Form) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 bg-green-700 hover:bg-green-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-      Download Form CCF
-    </button>
-    <button id="btnCcfPv" type="button" title="Pratinjau form CCF Medco (PDF) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 bg-sky-700 hover:bg-sky-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      Pratinjau PDF CCF
-    </button>
-    <button id="btnSlipPv" type="button" title="Pratinjau slip gaji (PDF) sesuai filter yang aktif; bisa geser ke slip berikutnya" class="hidden inline-flex items-center gap-2 bg-sky-700 hover:bg-sky-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      Pratinjau Slip Gaji
-    </button>
-    <button id="btnAll" class="hidden inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg>
-      Kirim Semua Slip
-    </button>
-    <button id="btnSync" type="button" title="Isi Rekap Harian otomatis dari CCF Mobilization" class="hidden inline-flex items-center gap-2 bg-sky-700 hover:bg-sky-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 2v4h-4M6 22v-4h4"/></svg>
-      Sinkron dari CCF
-    </button>
-    <button id="btnSlipTs" type="button" title="Buat slip gaji per driver dari Timesheet (Rekap Harian) untuk bulan yang dipilih" class="hidden inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 rounded-lg px-4 py-2.5 text-sm font-bold disabled:opacity-50">Buat Slip dari Timesheet</button>
-    <button id="btnAdd" class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-500 rounded-lg px-4 py-2.5 text-sm font-bold">
-      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+
+    <div id="actions" class="flex flex-wrap items-center gap-2">
+    <button id="btnAdd" class="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       Tambah Data
     </button>
+    <div id="expWrap" class="relative">
+      <button type="button" id="btnExp" aria-haspopup="true" aria-expanded="false" class="inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+        <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Ekspor
+        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="expMenu" class="hidden absolute left-0 top-full mt-2 min-w-[200px] rounded-xl bg-[#111c38] border border-[#27375e] shadow-xl p-1.5 z-30">
+    <button id="btnPv" type="button" title="Pratinjau PDF tabel yang sedang tampil (ikut filter), tanpa mengunduh" class="hidden flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#16233f] disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      Pratinjau
+    </button>
+    <button id="btnPdf" type="button" class="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#16233f] disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      Export PDF
+    </button>
+    <button id="btnXls" type="button" class="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-md text-left text-sm text-slate-200 hover:bg-[#16233f] disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      Export Excel
+    </button>
+      </div>
+    </div>
+    <button id="btnSync" type="button" title="Isi Rekap Harian otomatis dari CCF Mobilization" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8M18 2v4h-4M6 22v-4h4"/></svg>
+      Sinkron dari CCF
+    </button>
+    <button id="btnSlipTs" type="button" title="Buat slip gaji per driver dari Timesheet (Rekap Harian) untuk bulan yang dipilih" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">Buat Slip dari Timesheet</button>
+    <button id="btnCcf" type="button" title="Download form CCF Medco (format Crew Change Form) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      Download Form CCF
+    </button>
+    <button id="btnCcfPv" type="button" title="Pratinjau form CCF Medco (PDF) sesuai filter yang aktif" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      Pratinjau PDF CCF
+    </button>
+    <button id="btnSlipPv" type="button" title="Pratinjau slip gaji (PDF) sesuai filter yang aktif; bisa geser ke slip berikutnya" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      Pratinjau Slip Gaji
+    </button>
+    <button id="btnAll" class="hidden inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg>
+      Kirim Semua Slip
+    </button>
+    <button id="btnSwap" type="button" class="inline-flex items-center gap-2 h-10 px-3.5 rounded-lg border border-[#27375e] text-slate-200 hover:bg-[#16233f] text-sm font-medium disabled:opacity-50">
+      <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
+      Quick Swap Roster
+    </button>
+    </div>
   </section>
 
-  <!-- Tabel / konten -->
+<!-- Tabel / konten -->
   <div id="opsBox" class="hidden"></div>
 
-  <div id="view" class="rounded-2xl border border-[#16213d] bg-[#0a1124] overflow-x-auto">
-    <p class="p-8 text-center text-slate-500">Memuat data...</p>
+  <div id="view" class="rounded-xl bg-[#111c38] overflow-x-auto">
+    <p class="p-10 text-center text-slate-400">Memuat data...</p>
   </div>
 </main>
+</div>
+</div>
 
 <!-- Modal form -->
 <div id="modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-  <form id="mf" class="bg-[#0a1124] border border-[#1f2c4d] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5 space-y-4">
-    <div class="flex justify-between items-center border-b border-[#16213d] pb-3">
+  <form id="mf" class="bg-[#111c38] border border-[#27375e] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5 space-y-4">
+    <div class="flex justify-between items-center border-b border-[#1d2b4c] pb-3">
       <h3 id="mt" class="font-bold text-amber-400"></h3>
       <button type="button" id="mx" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
     <div id="mb"></div>
-    <div class="flex justify-end gap-2 pt-3 border-t border-[#16213d]">
+    <div class="flex justify-end gap-2 pt-3 border-t border-[#1d2b4c]">
       <button type="button" id="mc" class="px-4 py-2 bg-slate-800 rounded-lg">Batal</button>
       <button type="submit" id="ms" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg disabled:opacity-50">Simpan data</button>
     </div>
@@ -155,19 +231,19 @@
 </div>
 <!-- Modal preview slip PDF -->
 <div id="pv" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-  <div class="bg-[#0a1124] border border-[#1f2c4d] rounded-xl w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden">
-    <div class="flex justify-between items-center border-b border-[#16213d] px-5 py-3">
+  <div class="bg-[#111c38] border border-[#27375e] rounded-xl w-full max-w-3xl h-[92vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center border-b border-[#1d2b4c] px-5 py-3">
       <h3 class="font-bold text-amber-400">Preview Slip Gaji (PDF)</h3>
       <button type="button" id="pvX" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
-    <div id="pvNav" class="hidden flex items-center justify-between gap-2 px-5 py-2 border-b border-[#16213d]">
+    <div id="pvNav" class="hidden flex items-center justify-between gap-2 px-5 py-2 border-b border-[#1d2b4c]">
       <button type="button" id="pvPrev" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm disabled:opacity-40">&laquo; Sebelumnya</button>
       <span id="pvPos" class="text-xs text-slate-300"></span>
       <button type="button" id="pvNext" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm disabled:opacity-40">Berikutnya &raquo;</button>
     </div>
-    <p id="pvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#16213d]"></p>
+    <p id="pvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#1d2b4c]"></p>
     <iframe id="pvFrame" sandbox="" class="flex-1 w-full bg-white" title="Preview slip gaji"></iframe>
-    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#16213d]">
+    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#1d2b4c]">
       <button type="button" id="pvClose" class="px-4 py-2 bg-slate-800 rounded-lg">Tutup</button>
       <button type="button" id="pvOpen" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">Buka PDF</button>
       <button type="button" id="pvWa" class="px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg">Chat WhatsApp</button>
@@ -178,14 +254,14 @@
 </div>
 <!-- Modal pratinjau BAST -->
 <div id="bpv" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-  <div class="bg-[#0a1124] border border-[#1f2c4d] rounded-xl w-full max-w-4xl h-[94vh] flex flex-col overflow-hidden">
-    <div class="flex justify-between items-center border-b border-[#16213d] px-5 py-3">
+  <div class="bg-[#111c38] border border-[#27375e] rounded-xl w-full max-w-4xl h-[94vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center border-b border-[#1d2b4c] px-5 py-3">
       <h3 id="bpvT" class="font-bold text-amber-400">Pratinjau BAST (PDF)</h3>
       <button type="button" id="bpvX" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
-    <p id="bpvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#16213d]"></p>
+    <p id="bpvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#1d2b4c]"></p>
     <iframe id="bpvFrame" class="flex-1 w-full bg-white" title="Pratinjau BAST"></iframe>
-    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#16213d]">
+    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#1d2b4c]">
       <button type="button" id="bpvClose" class="px-4 py-2 bg-slate-800 rounded-lg">Tutup</button>
       <button type="button" id="bpvOpen" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg">Buka di tab baru</button>
       <button type="button" id="bpvPdf" class="px-4 py-2 bg-rose-700 hover:bg-rose-600 font-bold rounded-lg">Cetak PDF</button>
@@ -194,14 +270,14 @@
 </div>
 <!-- Modal pratinjau form CCF -->
 <div id="cpv" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-  <div class="bg-[#0a1124] border border-[#1f2c4d] rounded-xl w-full max-w-7xl h-[92vh] flex flex-col overflow-hidden">
-    <div class="flex justify-between items-center border-b border-[#16213d] px-5 py-3">
+  <div class="bg-[#111c38] border border-[#27375e] rounded-xl w-full max-w-7xl h-[92vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center border-b border-[#1d2b4c] px-5 py-3">
       <h3 class="font-bold text-amber-400">Pratinjau Form CCF Medco (PDF)</h3>
       <button type="button" id="cpvX" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
-    <p id="cpvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#16213d]"></p>
+    <p id="cpvInfo" class="px-5 py-2 text-xs text-slate-200 border-b border-[#1d2b4c]"></p>
     <iframe id="cpvFrame" sandbox="" class="flex-1 w-full bg-white" title="Pratinjau form CCF"></iframe>
-    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#16213d]">
+    <div class="flex flex-wrap justify-end gap-2 px-5 py-3 border-t border-[#1d2b4c]">
       <button type="button" id="cpvClose" class="px-4 py-2 bg-slate-800 rounded-lg">Tutup</button>
       <button type="button" id="cpvXls" class="px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg disabled:opacity-50">Download Excel</button>
       <button type="button" id="cpvPdf" class="px-4 py-2 bg-rose-700 hover:bg-rose-600 font-bold rounded-lg disabled:opacity-50">Unduh PDF</button>
@@ -210,40 +286,40 @@
 </div>
 <!-- Modal lampiran file -->
 <div id="att" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-  <div class="bg-[#0a1124] border border-[#1f2c4d] rounded-xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
-    <div class="flex justify-between items-center border-b border-[#16213d] px-5 py-3">
+  <div class="bg-[#111c38] border border-[#27375e] rounded-xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+    <div class="flex justify-between items-center border-b border-[#1d2b4c] px-5 py-3">
       <h3 id="attTitle" class="font-bold text-amber-400">Lampiran</h3>
       <button type="button" id="attX" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
     <div class="overflow-y-auto p-5 space-y-4 text-sm">
       <div id="attList"></div>
-      <div id="attPrev" class="hidden rounded-lg border border-[#1f2c4d] bg-[#050914] p-2"></div>
+      <div id="attPrev" class="hidden rounded-lg border border-[#27375e] bg-[#0a1124] p-2"></div>
       <label id="attUp" class="block">
         <span id="attHint" class="text-xs text-slate-400">Unggah file (PDF, PNG, JPG, DOC/DOCX, XLS/XLSX, maksimal 10 MB per file)</span>
         <input id="attFile" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" class="block w-full mt-1 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-amber-500">
       </label>
       <p id="attMsg" class="text-xs text-slate-400"></p>
     </div>
-    <div class="flex justify-end px-5 py-3 border-t border-[#16213d]">
+    <div class="flex justify-end px-5 py-3 border-t border-[#1d2b4c]">
       <button type="button" id="attClose" class="px-4 py-2 bg-slate-800 rounded-lg">Tutup</button>
     </div>
   </div>
 </div>
 <!-- Layar login -->
-<div id="login" class="fixed inset-0 z-[70] bg-[#050914] flex items-center justify-center p-4">
-  <form id="lf" class="w-full max-w-sm rounded-2xl border border-[#1f2c4d] bg-[#0a1124] p-6 space-y-4">
+<div id="login" class="fixed inset-0 z-[70] bg-[#0a1124] flex items-center justify-center p-4">
+  <form id="lf" class="w-full max-w-sm rounded-2xl border border-[#27375e] bg-[#111c38] p-6 space-y-4">
     <div class="text-center space-y-1">
       <img data-logo alt="Logo CV. Jawara Mata Merah" class="mx-auto h-24 w-auto rounded-lg">
       <h1 class="text-lg font-bold text-red-500">CV. Jawara Mata Merah</h1>
       <p class="text-xs text-slate-400">Masuk ke Dashboard Operasional</p>
     </div>
-    <label class="block"><span class="text-xs text-slate-400">Email</span><input id="le" type="email" autocomplete="username" required class="w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1"></label>
+    <label class="block"><span class="text-xs text-slate-400">Email</span><input id="le" type="email" autocomplete="username" required class="w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1"></label>
     <label class="block"><span class="text-xs text-slate-400">Password</span>
-      <div class="relative"><input id="lp" type="password" autocomplete="current-password" required class="w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1 pr-16"><button type="button" id="lt" class="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 text-xs text-slate-400 hover:text-white">Lihat</button></div></label>
+      <div class="relative"><input id="lp" type="password" autocomplete="current-password" required class="w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1 pr-16"><button type="button" id="lt" class="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 text-xs text-slate-400 hover:text-white">Lihat</button></div></label>
     <p id="lm" class="text-xs text-red-300 min-h-[1rem]"></p>
     <button type="submit" id="lb" class="w-full px-4 py-2.5 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg disabled:opacity-50">Masuk</button>
-    <p class="text-[11px] text-slate-500 text-center">Lupa password? Hubungi creator untuk reset.</p>
-    <p class="text-xs text-slate-400 text-center pt-1 border-t border-[#16213d]">Created by <span class="font-semibold text-slate-200">Aji Pangestu</span></p>
+    <p class="text-[11px] text-slate-400 text-center">Lupa password? Hubungi creator untuk reset.</p>
+    <p class="text-xs text-slate-400 text-center pt-1 border-t border-[#1d2b4c]">Created by <span class="font-semibold text-slate-200">Aji Pangestu</span></p>
   </form>
 </div>
 <div id="toast" class="hidden"></div>
@@ -1140,7 +1216,7 @@ const TABS = [
     cols:[['client','Client'],['noKontrak','No. Kontrak'],['judul','Judul / lingkup'],['tglMulai','Mulai',r=>fd(r.tglMulai)],['tglAkhir','Berakhir',r=>fd(r.tglAkhir)],['sisa','Sisa Hari',r=>ktrSisa(r)],['nilai','Nilai',r=>r.nilai?rp(r.nilai):'-'],['kstatus','Status',r=>ktrBadge(r)]],
     form:[['client','Client','client',1],['noKontrak','No. Kontrak','text',1],['judul','Judul / lingkup kontrak'],['tglMulai','Tanggal mulai kontrak','date',1],['tglAkhir','Tanggal berakhir kontrak','date',1],['nilai','Nilai kontrak (Rp)','number'],['statusManual','Status','select:Otomatis (menurut tanggal)|Dibatalkan'],['keterangan','Keterangan','textarea']] },
   { k:'pemasukan', l:'Input Pemasukan', t:'Rekap Pemasukan', i:'dollar', ph:'Cari no. transaksi, sumber, keterangan...', date:'tanggal', xf:['kategori','metode','periode','status'],
-    cols:[['noTrx','No. Transaksi'],['tanggal','Tanggal',r=>fd(r.tanggal)],['client','Client',r=>esc(r.client)||'-'],['kategori','Kategori',r=>badge(r.kategori||'-','bg-emerald-600/20 text-emerald-300')],['sumber','Sumber'],['uraian','Keterangan'],['nominal','Nominal',r=>`<b class="${r.status==='Dibatalkan'?'text-slate-500 line-through':'text-emerald-300'}">${rp(r.nominal)}</b>`],['metode','Metode'],['rekening','Rekening / Kas'],['noRef','No. Ref'],['status','Status',r=>badge(r.status||'Valid',r.status==='Dibatalkan'?'bg-red-600/30 text-red-300':'bg-emerald-600/30 text-emerald-300')]],
+    cols:[['noTrx','No. Transaksi'],['tanggal','Tanggal',r=>fd(r.tanggal)],['client','Client',r=>esc(r.client)||'-'],['kategori','Kategori',r=>badge(r.kategori||'-','bg-emerald-600/20 text-emerald-300')],['sumber','Sumber'],['uraian','Keterangan'],['nominal','Nominal',r=>`<b class="${r.status==='Dibatalkan'?'text-slate-400 line-through':'text-emerald-300'}">${rp(r.nominal)}</b>`],['metode','Metode'],['rekening','Rekening / Kas'],['noRef','No. Ref'],['status','Status',r=>badge(r.status||'Valid',r.status==='Dibatalkan'?'bg-red-600/30 text-red-300':'bg-emerald-600/30 text-emerald-300')]],
     form:[['tanggal','Tanggal','date',1],['sumber','Sumber pemasukan','text',1],['kategori','Kategori','kat',1],['client','Client (opsional)','clientopt'],['uraian','Keterangan','textarea'],['nominal','Nominal (Rp)','number',1],['metode','Metode pembayaran','select:Transfer Bank|Tunai|Cek / Giro|E-Wallet|Lainnya'],['rekening','Rekening / kas tujuan'],['noRef','Nomor referensi (opsional)'],['status','Status','select:Valid|Dibatalkan']] },
   { k:'rekapgaji', l:'Rekap Gaji', t:'Rekapitulasi Gaji Personel Per Client', i:'wallet', rng:1, xf:['periode'], dlabel:'Periode gaji', ph:'Cari nama, posisi, client...' },
   { k:'pengeluaran', l:'Pengeluaran', t:'Tabel Pengeluaran Biaya Operasional', i:'receipt', r:1, ph:'Cari kategori, uraian, plat...', date:'tanggal',
@@ -1293,7 +1369,7 @@ function ccfRoster(r) {
 function bastOfUnit(u) {
   const pn = platKey_;
   const b = (DB.bast || []).filter(x => x.client === u.client && pn(x.plat) === pn(u.plat)).sort((x, y) => String(y.tanggal).localeCompare(String(x.tanggal)))[0];
-  return b ? esc(b.noBast) + ' <span class="text-slate-500">(' + esc(fd(b.tanggal)) + ')</span>' : '-';
+  return b ? esc(b.noBast) + ' <span class="text-slate-400">(' + esc(fd(b.tanggal)) + ')</span>' : '-';
 }
 const pnCls = st => ({ Terkirim: 'bg-sky-600/30 text-sky-300', Disetujui: 'bg-emerald-600/30 text-emerald-300', Ditolak: 'bg-red-600/30 text-red-300', Kedaluwarsa: 'bg-slate-600/40 text-slate-300', Dibatalkan: 'bg-red-600/30 text-red-300', Draft: 'bg-amber-500/20 text-amber-300' }[st] || 'bg-slate-600/40 text-slate-300');
 const poCls = st => ({ Disetujui: 'bg-emerald-600/30 text-emerald-300', Diproses: 'bg-sky-600/30 text-sky-300', Selesai: 'bg-teal-600/30 text-teal-300', Dibatalkan: 'bg-red-600/30 text-red-300', Diajukan: 'bg-amber-500/20 text-amber-300' }[st] || 'bg-slate-600/40 text-slate-300');
@@ -1330,7 +1406,7 @@ function renderXf() {
   const list = (curTab() || {}).xf || [];
   const html = list.map(f => {
     const d = XF_DEF[f], v = XFV[cur + ':' + f] || 'ALL';
-    return `<select data-xf="${f}" class="bg-[#050914] border border-[#1f2c4d] rounded-lg px-3 py-2.5 text-sm"><option value="ALL">${d.l}</option>${d.opts().map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    return `<select data-xf="${f}" class="bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"><option value="ALL">${d.l}</option>${d.opts().map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   }).join('');
   if (html !== XF_HTML) { XF_HTML = html; $('xf').innerHTML = html; }
 }
@@ -1348,8 +1424,8 @@ function pemStats(inCl) {
   const S = f => sumN(L.filter(f), 'nominal');
   return { L, day: S(r => r.tanggal === t), week: S(r => r.tanggal >= ws && r.tanggal <= t), month: S(r => String(r.tanggal).slice(0, 7) === m), year: S(r => String(r.tanggal).slice(0, 4) === y) };
 }
-const statBox = (l, v, cls) => `<div class="rounded-lg border border-[#16213d] bg-[#050914] p-3"><p class="text-[11px] text-slate-400">${l}</p><p class="text-sm font-bold ${cls || 'text-emerald-300'} mt-1">${v}</p></div>`;
-const barList = (arr, M, col) => { const mx = Math.max(1, ...arr.map(x => x[1])); return arr.length ? arr.map(([n, v]) => `<div class="text-xs"><div class="flex justify-between gap-2"><span class="truncate">${esc(n)}</span><span class="text-slate-300 whitespace-nowrap">${M(v)}</span></div><div class="h-1.5 rounded bg-[#16213d] mt-1"><div class="h-1.5 rounded ${col}" style="width:${Math.max(3, Math.round(v / mx * 100))}%"></div></div></div>`).join('') : '<p class="text-xs text-slate-500">Belum ada data.</p>'; };
+const statBox = (l, v, cls) => `<div class="rounded-lg border border-[#1d2b4c] bg-[#0a1124] p-3"><p class="text-[11px] text-slate-400">${l}</p><p class="text-sm font-bold ${cls || 'text-emerald-300'} mt-1">${v}</p></div>`;
+const barList = (arr, M, col) => { const mx = Math.max(1, ...arr.map(x => x[1])); return arr.length ? arr.map(([n, v]) => `<div class="text-xs"><div class="flex justify-between gap-2"><span class="truncate">${esc(n)}</span><span class="text-slate-300 whitespace-nowrap">${M(v)}</span></div><div class="h-1.5 rounded bg-[#1d2b4c] mt-1"><div class="h-1.5 rounded ${col}" style="width:${Math.max(3, Math.round(v / mx * 100))}%"></div></div></div>`).join('') : '<p class="text-xs text-slate-400">Belum ada data.</p>'; };
 const groupSum = (L, f) => { const o = {}; L.forEach(r => { const k = f(r) || '-'; o[k] = (o[k] || 0) + (Number(r.nominal) || 0); }); return Object.entries(o).sort((a, b) => b[1] - a[1]); };
 // Panel dashboard keuangan (dipakai Pemasukan dan Pengeluaran): hari ini/bulan ini/tahun ini, per kategori, per client, tren 6 bulan, transaksi terbaru
 function finPanel(o) {
@@ -1362,11 +1438,11 @@ function finPanel(o) {
   const bars = tr.map(([k, v]) => `<div class="flex-1 flex flex-col items-center justify-end gap-1 h-full"><div class="w-full rounded-t ${o.bar}" style="height:${Math.max(2, Math.round(v / mx * 70))}px" ${hide ? '' : `title="${esc(rp(v))}"`}></div><span class="text-[10px] text-slate-400">${MON[Number(k.slice(5)) - 1]} ${k.slice(2, 4)}</span></div>`).join('');
   const mL = L.filter(r => String(r.tanggal).slice(0, 7) === m);
   const last = [...L].sort((a, b) => String(b.tanggal).localeCompare(String(a.tanggal)) || String(b.id).localeCompare(String(a.id))).slice(0, 5);
-  return `<div class="rounded-2xl border border-[#16213d] bg-[#0a1124] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-bold ${o.tc} flex items-center gap-2">${ic(o.icon, 'w-5 h-5')}${o.title} (${esc(cfv === 'ALL' ? 'Semua Client' : shortCl(cfv))})${eye}</h3>${o.note ? `<span class="text-[11px] text-slate-500">${o.note}</span>` : ''}</div>` +
+  return `<div class="rounded-2xl border border-[#1d2b4c] bg-[#111c38] p-5 space-y-4"><div class="flex items-center justify-between"><h3 class="font-bold ${o.tc} flex items-center gap-2">${ic(o.icon, 'w-5 h-5')}${o.title} (${esc(cfv === 'ALL' ? 'Semua Client' : shortCl(cfv))})${eye}</h3>${o.note ? `<span class="text-[11px] text-slate-400">${o.note}</span>` : ''}</div>` +
     `<div class="grid ${$('d1').value || $('d2').value ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-2">${statBox('Hari ini', M(day), o.tc)}${statBox('Bulan ini', M(month), o.tc)}${statBox('Tahun ini', M(year), o.tc)}${$('d1').value || $('d2').value ? statBox('Periode dipilih', M(sumN(L.filter(r => inRange(r.tanggal, $('d1').value, $('d2').value)), 'nominal')), o.tc) : ''}</div>` +
     `<div class="grid sm:grid-cols-2 gap-4"><div class="space-y-2"><p class="text-xs font-semibold text-slate-300">Per kategori (bulan ini)</p>${barList(groupSum(mL, r => r.kategori), M, o.cbar)}</div><div class="space-y-2"><p class="text-xs font-semibold text-slate-300">Per client (bulan ini)</p>${barList(groupSum(mL, r => r.client ? shortCl(r.client) : 'Tanpa client'), M, 'bg-sky-500')}</div></div>` +
     `<div><p class="text-xs font-semibold text-slate-300 mb-2">${o.trend}</p><div class="flex items-end gap-2 h-24">${bars}</div></div>` +
-    `<div><p class="text-xs font-semibold text-slate-300 mb-2">Transaksi terbaru</p>${last.length ? last.map(r => `<div class="flex justify-between gap-2 text-xs py-1 border-b border-[#16213d]"><span class="truncate">${esc(fd(r.tanggal))} &middot; ${esc(r.kategori)} &middot; ${esc(o.who(r))}</span><span class="${o.vc} whitespace-nowrap">${M(r.nominal)}</span></div>`).join('') : '<p class="text-xs text-slate-500">Belum ada transaksi.</p>'}</div></div>`;
+    `<div><p class="text-xs font-semibold text-slate-300 mb-2">Transaksi terbaru</p>${last.length ? last.map(r => `<div class="flex justify-between gap-2 text-xs py-1 border-b border-[#1d2b4c]"><span class="truncate">${esc(fd(r.tanggal))} &middot; ${esc(r.kategori)} &middot; ${esc(o.who(r))}</span><span class="${o.vc} whitespace-nowrap">${M(r.nominal)}</span></div>`).join('') : '<p class="text-xs text-slate-400">Belum ada transaksi.</p>'}</div></div>`;
 }
 const pemPanel = () => finPanel({ key: 'pem', title: 'Dashboard Keuangan - Pemasukan', L: pemStats(inClF).L, tc: 'text-emerald-400', icon: 'dollar', bar: 'bg-emerald-500/70', cbar: 'bg-emerald-500', vc: 'text-emerald-300', trend: 'Tren pemasukan 6 bulan terakhir', note: 'tanpa transaksi dibatalkan', who: r => r.sumber });
 const pengPanel = () => finPanel({ key: 'peng', title: 'Dashboard Keuangan - Pengeluaran', L: (DB.pengeluaran || []).filter(inClF), tc: 'text-rose-400', icon: 'receipt', bar: 'bg-rose-500/70', cbar: 'bg-rose-500', vc: 'text-rose-300', trend: 'Tren pengeluaran 6 bulan terakhir', note: '', who: r => r.uraian || r.plat || '-' });
@@ -1383,10 +1459,10 @@ function ccfRecap(rows, limit) {
   });
   return Object.values(g).sort((a, b) => b.p.localeCompare(a.p) || a.client.localeCompare(b.client)).slice(0, limit);
 }
-const ccfTable = list => list.length ? `<table class="w-full text-xs"><thead><tr class="text-slate-400 text-left"><th class="py-1">Periode</th><th>Client</th><th class="text-right">Driver</th><th class="text-right">Unit</th><th class="text-right">Demob</th></tr></thead><tbody class="divide-y divide-[#16213d]">${list.map(o => `<tr><td class="py-1">${esc(o.p || '-')}</td><td>${esc(o.client)}</td><td class="text-right text-emerald-300">${o.drv.size}</td><td class="text-right text-sky-300">${o.unit.size}</td><td class="text-right text-amber-300">${o.demob.size}</td></tr>`).join('')}</tbody></table>` : '<p class="text-xs text-slate-500">Belum ada data CCF.</p>';
+const ccfTable = list => list.length ? `<table class="w-full text-xs"><thead><tr class="text-slate-400 text-left"><th class="py-1">Periode</th><th>Client</th><th class="text-right">Driver</th><th class="text-right">Unit</th><th class="text-right">Demob</th></tr></thead><tbody class="divide-y divide-[#1d2b4c]">${list.map(o => `<tr><td class="py-1">${esc(o.p || '-')}</td><td>${esc(o.client)}</td><td class="text-right text-emerald-300">${o.drv.size}</td><td class="text-right text-sky-300">${o.unit.size}</td><td class="text-right text-amber-300">${o.demob.size}</td></tr>`).join('')}</tbody></table>` : '<p class="text-xs text-slate-400">Belum ada data CCF.</p>';
 function ccfPanel() {
   const rows = (DB.ccf || []).filter(inClF);
-  return `<div class="rounded-2xl border border-[#16213d] bg-[#0a1124] p-5 space-y-3"><h3 class="font-bold text-sky-400 flex items-center gap-2">${ic('truck', 'w-5 h-5')}Penggunaan Driver dan Unit (CCF)</h3><p class="text-[11px] text-slate-500">Driver dan unit unik yang mobilisasi per client dan periode, langsung dari CCF + Driver Master + Master Unit.</p>${ccfTable(ccfRecap(rows, 8))}</div>`;
+  return `<div class="rounded-2xl border border-[#1d2b4c] bg-[#111c38] p-5 space-y-3"><h3 class="font-bold text-sky-400 flex items-center gap-2">${ic('truck', 'w-5 h-5')}Penggunaan Driver dan Unit (CCF)</h3><p class="text-[11px] text-slate-400">Driver dan unit unik yang mobilisasi per client dan periode, langsung dari CCF + Driver Master + Master Unit.</p>${ccfTable(ccfRecap(rows, 8))}</div>`;
 }
 function renderDash(has) {
   const parts = [];
@@ -1418,7 +1494,7 @@ function renderOps(rows) {
     bad.forEach(r => info[r.id].forEach(x => ms[x.t].add(x.m)));
     if (bad.length) h = `<div class="rounded-lg border border-amber-700 bg-amber-950/50 text-amber-200 px-4 py-3 text-xs space-y-1"><p class="font-bold">&#9888; Peringatan Rekap Harian: ${bad.length} baris bermasalah (${ms.dup.size} data double, ${ms.unit.size} unit dibawa orang berbeda pada shift yang sama)</p>${[...ms.dup, ...ms.unit].slice(0, 8).map(m => `<p>- ${esc(m)}</p>`).join('')}${ms.dup.size + ms.unit.size > 8 ? `<p>- dan ${ms.dup.size + ms.unit.size - 8} peringatan lain (lihat kolom Peringatan)</p>` : ''}</div>`;
   } else if (cur === 'ccf') {
-    h = `<div class="rounded-lg border border-[#16213d] bg-[#0a1124] p-3"><p class="text-xs font-semibold text-slate-300 mb-1">Rekap penggunaan driver dan unit (sesuai filter)</p>${ccfTable(ccfRecap(rows, 12))}</div>`;
+    h = `<div class="rounded-lg border border-[#1d2b4c] bg-[#111c38] p-3"><p class="text-xs font-semibold text-slate-300 mb-1">Rekap penggunaan driver dan unit (sesuai filter)</p>${ccfTable(ccfRecap(rows, 12))}</div>`;
   }
   $('opsBox').innerHTML = h;
   $('opsBox').classList.toggle('hidden', !h);
@@ -1443,19 +1519,20 @@ function renderChrome() {
   $('rf').innerHTML = `<option value="ALL">Semua Roster</option><option value="ON_ROSTER">ON Roster (${DB.settings.ROSTER_ON_DAYS} hari kerja)</option><option value="OFF_ROSTER">OFF Roster (${DB.settings.ROSTER_OFF_DAYS} hari off)</option>`;
   $('rf').value = rsel;
 
-  // Menu dropdown header
+  // Sidebar: satu navigasi, dikelompokkan (isi dari MENUS + menu sistem); hanya menu yang diizinkan peran
   const okKeys = visibleTabs().map(t => t.k);
-  $('menus').innerHTML = MENUS.map(([name, icon, color, items], gi) => {
-    const list = CAN() ? items.filter(x => okKeys.includes(x[0])) : [];
-    if (!list.length) return '';
-    return `<div class="relative"><button type="button" data-menu="${gi}" class="flex items-center gap-2 rounded-lg border border-[#1f2c4d] bg-[#050914] hover:bg-[#0d1830] px-3 py-2 text-sm font-semibold">${ic(icon, 'w-4 h-4 ' + color)}<span>${name}</span>${ic('chev', 'w-3.5 h-3.5 text-slate-400')}</button>` +
-      `<div data-panel="${gi}" class="hidden absolute left-0 mt-2 min-w-[230px] rounded-lg border border-[#1f2c4d] bg-[#0a1124] p-1.5 shadow-xl">${list.map(([k, l, i, c]) =>
-        `<button type="button" data-add="${k}" class="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left text-sm text-slate-200 hover:bg-slate-800">${ic(i, 'w-4 h-4 flex-none ' + c)}<span>${(TABS.find(t => t.k === k) || {}).form ? '+ ' : ''}${l}</span></button>`).join('')}</div></div>`;
+  const addKeys = new Set(MENUS.flatMap(g => g[3].map(x => x[0])));
+  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).concat(name === 'Keuangan & SDM' ? ['rekapgaji'] : [])])
+    .concat([['Sistem', ['backup', 'pengaturan', 'users']]]);
+  $('tabs').innerHTML = groups.map(([name, keys]) => {
+    const rows = keys.filter(k => okKeys.includes(k)).map(k => {
+      const t = TABS.find(x => x.k === k); if (!t) return '';
+      const on = k === cur, add = CAN() && addKeys.has(k) && t.form;
+      return `<div class="nav-row${on ? ' on' : ''}"><button type="button" data-k="${k}" title="${esc(t.l)}"${on ? ' aria-current="page"' : ''} class="nav-item">${ic(t.i || 'file', 'w-[18px] h-[18px] flex-none')}<span class="sb-label truncate">${esc(t.l)}</span></button>` +
+        (add ? `<button type="button" data-add="${k}" title="Tambah data: ${esc(t.l)}" aria-label="Tambah data ${esc(t.l)}" class="nav-add"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>` : '') + '</div>';
+    }).join('');
+    return rows ? `<div><p class="nav-gh sb-label-h"><span class="sb-label">${name}</span></p>${rows}</div>` : '';
   }).join('');
-
-  // Tab dengan ikon
-  $('tabs').innerHTML = visibleTabs().map(t =>
-    `<button type="button" data-k="${t.k}" class="flex flex-col items-center justify-center gap-1 w-[88px] sm:w-[100px] min-h-[64px] px-2 py-2 rounded-lg text-center text-[13px] font-semibold leading-tight ${t.k === cur ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}">${ic(t.i, 'w-4 h-4')}<span>${t.l}</span></button>`).join('');
 
   // Kartu ringkasan
   let tot = 0, paid = 0, out = 0, late = 0, nPaid = 0, nOut = 0;
@@ -1486,10 +1563,10 @@ function renderChrome() {
   ];
   $('cards').innerHTML = items.filter(it => has(it[7])).map(([l, v, sub, vc, bg, icon, sk]) => {
     const hide = sk && !SHOWN[sk];
-    const eyeBtn = sk ? `<button type="button" data-eye="${sk}" title="${hide ? 'Tampilkan angka' : 'Sembunyikan angka'}" aria-label="${hide ? 'Tampilkan angka' : 'Sembunyikan angka'}" class="inline-flex items-center justify-center w-7 h-7 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/60 flex-none">${ic(hide ? 'eyeoff' : 'eye', 'w-4 h-4')}</button>` : '';
-    return `<div class="rounded-2xl border border-[#16213d] bg-[#0a1124] p-5 flex items-center justify-between gap-3">` +
-    `<div class="min-w-0"><p class="text-sm text-slate-300 flex items-center gap-2">${l}${eyeBtn}</p><p class="text-2xl font-bold ${vc} my-1 tracking-wide">${hide ? 'Rp ••••••••' : esc(v)}</p><p class="text-xs text-slate-400">${sk === 'profit' && hide ? 'Klik ikon mata untuk menampilkan' : esc(sub)}</p></div>` +
-    `<div class="flex-none w-14 h-14 rounded-xl flex items-center justify-center ${bg}">${ic(icon, 'w-7 h-7')}</div></div>`;
+    const eyeBtn = sk ? `<button type="button" data-eye="${sk}" title="${hide ? 'Tampilkan angka' : 'Sembunyikan angka'}" aria-label="${hide ? 'Tampilkan angka' : 'Sembunyikan angka'}" class="inline-flex items-center justify-center w-6 h-6 rounded-full text-slate-400 hover:text-white hover:bg-white/10 flex-none">${ic(hide ? 'eyeoff' : 'eye', 'w-3.5 h-3.5')}</button>` : '';
+    const col = /emerald|red/.test(vc) ? vc : /amber/.test(vc) ? 'text-amber-300' : 'text-slate-100';
+    return `<div class="kpi"><div class="flex items-center justify-between gap-1"><p class="kpi-l">${l}</p>${eyeBtn}</div>` +
+    `<p class="kpi-v ${col}">${hide ? 'Rp ••••••••' : esc(v)}</p><p class="kpi-s">${sk === 'profit' && hide ? 'Klik ikon mata untuk menampilkan' : esc(sub)}</p></div>`;
   }).join('');
 
   renderDash(has);
@@ -1589,11 +1666,11 @@ function render() {
   renderOps(rows);
   const cell = (c, r) => c[2] ? c[2](r) : (esc(r[c[0]]) || '-');
   if (!rows.length) {
-    $('view').innerHTML = '<p class="p-10 text-center text-slate-500">Belum ada data. Pilih "Tambah Data" untuk mulai.</p>';
+    $('view').innerHTML = '<div class="empty-state"><svg class="w-10 h-10 mx-auto mb-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"/></svg><p class="text-sm font-medium text-slate-200">Belum ada data</p><p class="text-xs mt-1">Pilih "Tambah Data" untuk mulai, atau ubah filter di atas.</p></div>';
     return;
   }
   // Tabel untuk layar lebar, kartu untuk HP
-  const th = 'px-4 py-4 text-xs font-bold uppercase tracking-wide text-slate-200';
+  const th = 'px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap';
   const head = `<th class="${th}">No.</th>` + t.cols.map(c => `<th class="${th}">${c[1]}</th>`).join('') + `<th class="${th} text-center">Aksi</th>`;
   const gcount = {};
   if (grp) rows.forEach(r => { const g = grp(r); gcount[g] = (gcount[g] || 0) + 1; });
@@ -1601,14 +1678,14 @@ function render() {
   const items = rows.map(r => { const g = grp ? grp(r) : null, first = g !== null && g !== lastG; if (first) { lastG = g; n = 0; } return { r, g, first, no: ++n }; });
   const gcls = g => g === 'MOBILIZATION' ? 'text-emerald-300' : 'text-amber-300';
   const body = items.map(({ r, g, first, no }) =>
-    (first ? `<tr class="bg-[#0d1830]"><td colspan="${t.cols.length + 2}" class="px-4 py-2 text-xs font-bold tracking-widest ${gcls(g)}">${g} (${gcount[g]} orang)</td></tr>` : '') +
-    '<tr class="hover:bg-slate-800/30"><td class="px-4 py-3 text-slate-400">' + no + '</td>' + t.cols.map(c => `<td class="px-4 py-3">${cell(c, r)}</td>`).join('') + `<td class="px-4 py-3 text-center whitespace-nowrap">${actions(r)}</td></tr>`).join('');
+    (first ? `<tr class="bg-[#16233f]"><td colspan="${t.cols.length + 2}" class="px-4 py-2 text-xs font-bold tracking-widest ${gcls(g)}">${g} (${gcount[g]} orang)</td></tr>` : '') +
+    '<tr class="even:bg-white/[0.02] hover:bg-white/[0.05]"><td class="px-4 py-3.5 text-slate-400">' + no + '</td>' + t.cols.map(c => `<td class="px-4 py-3.5">${cell(c, r)}</td>`).join('') + `<td class="px-4 py-3.5 text-center whitespace-nowrap">${actions(r)}</td></tr>`).join('');
   const cards = items.map(({ r, g, first, no }) =>
-    (first ? `<div class="px-4 py-2 bg-[#0d1830] text-xs font-bold tracking-widest ${gcls(g)}">${g} (${gcount[g]} orang)</div>` : '') +
-    `<div class="p-4"><p class="text-xs text-slate-500 mb-2">No. ${no}</p><div class="grid grid-cols-2 gap-x-3 gap-y-2">${t.cols.map(c => `<div class="min-w-0"><p class="text-[10px] uppercase tracking-wide text-slate-500">${c[1]}</p><div class="text-xs break-words">${cell(c, r)}</div></div>`).join('')}</div><div class="pt-2 mt-2 border-t border-[#16213d] flex flex-wrap gap-1">${actions(r)}</div></div>`).join('');
+    (first ? `<div class="px-4 py-2 bg-[#16233f] text-xs font-bold tracking-widest ${gcls(g)}">${g} (${gcount[g]} orang)</div>` : '') +
+    `<div class="p-4"><p class="text-xs text-slate-400 mb-2">No. ${no}</p><div class="grid grid-cols-2 gap-x-3 gap-y-2">${t.cols.map(c => `<div class="min-w-0"><p class="text-[10px] uppercase tracking-wide text-slate-400">${c[1]}</p><div class="text-xs break-words">${cell(c, r)}</div></div>`).join('')}</div><div class="pt-2 mt-2 border-t border-[#1d2b4c] flex flex-wrap gap-1">${actions(r)}</div></div>`).join('');
   $('view').innerHTML =
-    `<table class="hidden md:table w-full text-left text-[13px]"><thead><tr class="border-b border-[#16213d]">${head}</tr></thead><tbody class="divide-y divide-[#16213d]">${body}</tbody></table>` +
-    `<div class="md:hidden divide-y divide-[#16213d]">${cards}</div>`;
+    `<table class="hidden md:table w-full text-left text-[13px]"><thead><tr>${head}</tr></thead><tbody class="divide-y divide-[#1d2b4c]/50">${body}</tbody></table>` +
+    `<div class="md:hidden divide-y divide-[#1d2b4c]">${cards}</div>`;
 }
 
 // Driver yang tampil di Matrix Roster / export: filter Client, status roster (ON 20 hari kerja / OFF 10 hari off), dan pencarian
@@ -1621,7 +1698,7 @@ function renderMatrix() {
   const list = matrixRows();
   $('count').textContent = '(' + list.length + ' dari ' + DB.drivers.length + ' driver)';
   const on = DB.settings.ROSTER_ON_DAYS, off = DB.settings.ROSTER_OFF_DAYS, n = on + off;
-  const legend = '<div class="flex flex-wrap items-center gap-3 text-xs text-slate-400 pb-2"><span><i class="inline-block w-3 h-3 rounded-sm bg-emerald-600/60 align-middle"></i> ON</span><span><i class="inline-block w-3 h-3 rounded-sm bg-slate-600/60 align-middle"></i> OFF</span><span><i class="inline-block w-3 h-3 rounded-sm ring-2 ring-amber-400 align-middle"></i> Posisi hari ini</span><span class="text-slate-500">Otomatis dari Input CCF: Mobilization = ON, Demobilization = OFF (hari ke-1 = tanggal kejadian)</span></div>';
+  const legend = '<div class="flex flex-wrap items-center gap-3 text-xs text-slate-400 pb-2"><span><i class="inline-block w-3 h-3 rounded-sm bg-emerald-600/60 align-middle"></i> ON</span><span><i class="inline-block w-3 h-3 rounded-sm bg-slate-600/60 align-middle"></i> OFF</span><span><i class="inline-block w-3 h-3 rounded-sm ring-2 ring-amber-400 align-middle"></i> Posisi hari ini</span><span class="text-slate-400">Otomatis dari Input CCF: Mobilization = ON, Demobilization = OFF (hari ke-1 = tanggal kejadian)</span></div>';
   $('view').innerHTML = '<div class="p-4 space-y-2">' + legend + (list.length ? list.map(d => {
     const isOn = d.status === 'ON_ROSTER', day = Number(d.rosterDay) || 0;
     const pos = isOn ? Math.min(on, day) : Math.min(n, on + day);
@@ -1630,11 +1707,11 @@ function renderMatrix() {
     if (d.rosterAuto && isOn && day > on) note += ` <span class="text-red-300">&middot; lewat ${day - on} hari, waktunya demob</span>`;
     if (d.rosterAuto && !isOn && day > off) note += ' <span class="text-sky-300">&middot; siap mobilisasi</span>';
     return `<div class="flex items-center gap-3"><span class="w-40 sm:w-48 truncate flex-none">${esc(d.name)}</span><div class="flex gap-0.5">${cells}</div><span class="text-xs text-slate-400 whitespace-nowrap">${esc(d.status || '-')} H${day}${d.platKendaraan ? ' &middot; ' + esc(d.platKendaraan) : ''}${note}</span></div>`;
-  }).join('') : '<p class="text-slate-500 p-5">' + (DB.drivers.length ? 'Tidak ada driver yang cocok dengan filter.' : 'Belum ada data driver.') + '</p>') + '</div>';
+  }).join('') : '<p class="text-slate-400 p-5">' + (DB.drivers.length ? 'Tidak ada driver yang cocok dengan filter.' : 'Belum ada data driver.') + '</p>') + '</div>';
 }
 
 function renderSettings() {
-  const cls = 'w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1';
+  const cls = 'w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1';
   const fields = SET.map(([k, l, ty]) => {
     const v = DB.settings[k] == null ? '' : DB.settings[k];
     const inp = ty === 'number'
@@ -1670,7 +1747,7 @@ function openForm(row) {
   if (!t.form) return;
   row = row || {};
   if (cur === 'slip' && !row.id) row = Object.assign({ lokasi: 'Suban', departemen: 'Drilling' }, row); // isian awal slip baru; tetap bisa diubah
-  const cls = 'w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1';
+  const cls = 'w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1';
   const fields = t.form.map(([k, l, ty = 'text', req]) => {
     const v = row[k] == null ? '' : row[k], rq = req ? 'required' : '';
     let inp;
@@ -1701,7 +1778,7 @@ function openForm(row) {
     else if (ty === 'date') {
       // data baru: kolom tanggal wajib langsung terisi tanggal hari ini (WIB); klik kotak mana pun untuk membuka kalender
       const dv = v || (req && !row.id ? today() : '');
-      inp = `<div class="relative mt-1"><div class="flex items-center justify-between rounded-lg border border-[#1f2c4d] bg-[#050914] p-2.5 pointer-events-none"><span class="${dv ? '' : 'text-slate-500'}">${esc(dmy(dv)) || 'dd/mm/yyyy'}</span>${ic('calendar', 'w-4 h-4 text-slate-400')}</div>` +
+      inp = `<div class="relative mt-1"><div class="flex items-center justify-between rounded-lg border border-[#27375e] bg-[#0a1124] p-2.5 pointer-events-none"><span class="${dv ? '' : 'text-slate-400'}">${esc(dmy(dv)) || 'dd/mm/yyyy'}</span>${ic('calendar', 'w-4 h-4 text-slate-400')}</div>` +
         `<input name="${k}" type="date" ${rq} value="${esc(dv)}" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></div>`;
     }
     else inp = `<input name="${k}" type="${ty === 'email' ? ty : 'text'}" ${rq} value="${esc(v)}" class="${cls}">`;
@@ -1709,7 +1786,7 @@ function openForm(row) {
   }).join('');
   const names = [...new Set((cur === 'slip' ? (DB.identitas || []).map(x => x.nama) : DB.drivers.map(d => d.name)).filter(Boolean))];
   const dl = `<datalist id="dl">${names.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
-  const hint = cur === 'slip' ? '<p id="emHint" class="mt-3 text-xs"></p>' : cur === 'ccf' ? '<p id="rsHint" class="mt-3 text-xs text-slate-400"></p>' : cur === 'invoice' && !row.id ? '<div id="epiBox" class="mt-3 hidden rounded-lg border border-[#1f2c4d] p-3 text-sm"><span class="text-xs text-slate-400">Client EPI: isi otomatis (nomor, periode, nilai) menurut jenis invoice</span><select id="epiJenis" class="w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1"><option value="">- isi manual -</option><option value="biasa">Invoice Biasa</option><option value="bus">Invoice BUS</option></select></div>' : '';
+  const hint = cur === 'slip' ? '<p id="emHint" class="mt-3 text-xs"></p>' : cur === 'ccf' ? '<p id="rsHint" class="mt-3 text-xs text-slate-400"></p>' : cur === 'invoice' && !row.id ? '<div id="epiBox" class="mt-3 hidden rounded-lg border border-[#27375e] p-3 text-sm"><span class="text-xs text-slate-400">Client EPI: isi otomatis (nomor, periode, nilai) menurut jenis invoice</span><select id="epiJenis" class="w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1"><option value="">- isi manual -</option><option value="biasa">Invoice Biasa</option><option value="bus">Invoice BUS</option></select></div>' : '';
   const fileBox = FF_TABS.includes(cur) ? `<label class="block mt-3"><span class="text-xs text-slate-400">${esc(ATT_HINT[cur][0])}${row.id ? ' Pilih file untuk menambah / memperbarui lampiran (opsional).' : ' (opsional)'}</span><input id="ff" type="file" accept="${ATT_HINT[cur][1]}" class="block w-full mt-1 text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-amber-500"></label>` : '';
   openModal((row.id ? 'Ubah ' : 'Tambah ') + t.l, `<input type="hidden" name="id" value="${esc(row.id || '')}"><div class="grid sm:grid-cols-2 gap-3">${fields}</div>${hint}${fileBox}${dl}`,
     async o => {
@@ -2062,10 +2139,10 @@ function renderAtt() {
   $('attUp').classList.toggle('hidden', !CAN());
   const list = attOf(ATT.k, ATT.id), btn = 'px-2 py-1 hover:underline ';
   $('attList').innerHTML = list.length
-    ? '<div class="divide-y divide-[#16213d] rounded-lg border border-[#1f2c4d]">' + list.map(a =>
-      `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2"><div class="min-w-0"><p class="break-all">${esc(a.nama)}</p><p class="text-[11px] text-slate-500">${fsize(a.size)} &middot; ${esc(a.ts)} &middot; ${esc(String(a.oleh).split('@')[0])}</p></div>` +
+    ? '<div class="divide-y divide-[#1d2b4c] rounded-lg border border-[#27375e]">' + list.map(a =>
+      `<div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2"><div class="min-w-0"><p class="break-all">${esc(a.nama)}</p><p class="text-[11px] text-slate-400">${fsize(a.size)} &middot; ${esc(a.ts)} &middot; ${esc(String(a.oleh).split('@')[0])}</p></div>` +
       `<div class="flex flex-none gap-1"><button type="button" data-aa="view" data-ai="${esc(a.id)}" class="${btn}text-sky-300">Pratinjau</button><button type="button" data-aa="dl" data-ai="${esc(a.id)}" class="${btn}text-emerald-300">Unduh</button>${CANDEL() ? `<button type="button" data-aa="del" data-ai="${esc(a.id)}" class="${btn}text-red-300">Hapus</button>` : ''}</div></div>`).join('') + '</div>'
-    : '<p class="text-slate-500 text-center py-4">Belum ada file. Unggah di bawah ini.</p>';
+    : '<p class="text-slate-400 text-center py-4">Belum ada file. Unggah di bawah ini.</p>';
 }
 function showAttPrev(f, url) {
   clearAttPrev();
@@ -2178,7 +2255,7 @@ function renderTimesheet() {
   const nDrv = m.sections.reduce((t, s) => t + s.rows.length, 0), nTot = m.sections.reduce((t, s) => t + s.total, 0);
   $('count').textContent = '(' + nDrv + ' driver, total ' + nTot + ')';
   VIEW_ROWS = [];
-  if (!m.sections.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-500">Belum ada data Input Harian pada periode dan client ini. Isi Input Harian (atau Input CCF Mobilization) lalu timesheet muncul otomatis.</p>'; return; }
+  if (!m.sections.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-400">Belum ada data Input Harian pada periode dan client ini. Isi Input Harian (atau Input CCF Mobilization) lalu timesheet muncul otomatis.</p>'; return; }
   const R = 'background:#ff0000;color:#fff;font-weight:bold;text-align:center;border:1px solid #000;padding:3px 2px;font-size:10px', td = 'border:1px solid #000;padding:3px 2px;font-size:10px;text-align:center;color:#000', K = 'background:#000;border:1px solid #000';
   const sheet = s => {
     const dh = m.days.map(x => `<th style="${R};min-width:20px">${Number(x.slice(8))}</th>`).join('');
@@ -2218,15 +2295,15 @@ function renderRekapGaji() {
   const m = rgModel();
   $('count').textContent = '(' + m.rows.length + ' slip, ' + m.groups.length + ' client) - Total Take Home Pay ' + rp(m.tot.bersih);
   VIEW_ROWS = m.rows;
-  if (!m.rows.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-500">Tidak ada slip gaji pada filter ini. Input slip di menu Slip Gaji atau ubah periode.</p>'; return; }
+  if (!m.rows.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-400">Tidak ada slip gaji pada filter ini. Input slip di menu Slip Gaji atau ubah periode.</p>'; return; }
   const th = 'px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-200', R = ' text-right';
   const rc = rgRecap(m);
-  const sum = `<div class="p-4 space-y-2"><p class="text-sm font-bold text-amber-400">${rc.title}</p><div class="overflow-x-auto"><table class="w-full text-left text-[13px]"><thead><tr class="border-b border-[#16213d]">${rc.head.map((h, i) => `<th class="${th}${i > 0 ? R : ''}">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-[#16213d]">` +
-    rc.rows.map(r => '<tr class="hover:bg-slate-800/30">' + r.map((v, i) => `<td class="px-4 py-2.5${i > 0 ? R : ''}${i === 5 ? ' font-bold text-emerald-300' : ''}">${esc(v)}</td>`).join('') + '</tr>').join('') +
+  const sum = `<div class="p-4 space-y-2"><p class="text-sm font-bold text-amber-400">${rc.title}</p><div class="overflow-x-auto"><table class="w-full text-left text-[13px]"><thead><tr class="border-b border-[#1d2b4c]">${rc.head.map((h, i) => `<th class="${th}${i > 0 ? R : ''}">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-[#1d2b4c]">` +
+    rc.rows.map(r => '<tr class="even:bg-white/[0.02] hover:bg-white/[0.05]">' + r.map((v, i) => `<td class="px-4 py-2.5${i > 0 ? R : ''}${i === 5 ? ' font-bold text-emerald-300' : ''}">${esc(v)}</td>`).join('') + '</tr>').join('') +
     `<tr class="bg-red-950/40 font-bold">${rc.total.map((v, i) => `<td class="px-4 py-3${i > 0 ? R : ''}${i === 5 ? ' text-emerald-300' : ''}">${esc(v)}</td>`).join('')}</tr></tbody></table></div></div>`;
-  const det = m.groups.map(g => `<div class="p-4 space-y-2 border-t border-[#16213d]"><p class="text-sm font-bold text-sky-300">${esc(g.client)} <span class="text-xs text-slate-400 font-normal">(${g.t.n} personel, ${g.t.slip} slip)</span></p><div class="overflow-x-auto"><table class="w-full text-left text-[13px]"><thead><tr class="border-b border-[#16213d]">${['No.', 'Nama', 'Posisi', 'Periode', 'Gaji Kotor', 'Potongan', 'Take Home Pay', 'BPJS Perusahaan'].map((h, i) => `<th class="${th}${i > 3 ? R : ''}">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-[#16213d]">` +
-    g.rows.map((r, i) => `<tr class="hover:bg-slate-800/30"><td class="px-4 py-2 text-slate-400">${i + 1}</td><td class="px-4 py-2">${esc(r.nama)}</td><td class="px-4 py-2">${esc(r.posisi) || '-'}</td><td class="px-4 py-2">${esc(perLbl(r))}</td><td class="px-4 py-2${R}">${rp(r.kotor)}</td><td class="px-4 py-2${R}">${rp(r.potongan)}</td><td class="px-4 py-2${R} font-bold text-emerald-300">${rp(r.bersih)}</td><td class="px-4 py-2${R}">${rp(bpjsOf(r))}</td></tr>`).join('') +
-    `<tr class="bg-[#0d1830] font-bold"><td colspan="4" class="px-4 py-2.5 text-right">SUBTOTAL ${esc(shortCl(g.client))}</td><td class="px-4 py-2.5${R}">${rp(g.t.kotor)}</td><td class="px-4 py-2.5${R}">${rp(g.t.potongan)}</td><td class="px-4 py-2.5${R} text-emerald-300">${rp(g.t.bersih)}</td><td class="px-4 py-2.5${R}">${rp(g.t.bpjs)}</td></tr></tbody></table></div></div>`).join('');
+  const det = m.groups.map(g => `<div class="p-4 space-y-2 border-t border-[#1d2b4c]"><p class="text-sm font-bold text-sky-300">${esc(g.client)} <span class="text-xs text-slate-400 font-normal">(${g.t.n} personel, ${g.t.slip} slip)</span></p><div class="overflow-x-auto"><table class="w-full text-left text-[13px]"><thead><tr class="border-b border-[#1d2b4c]">${['No.', 'Nama', 'Posisi', 'Periode', 'Gaji Kotor', 'Potongan', 'Take Home Pay', 'BPJS Perusahaan'].map((h, i) => `<th class="${th}${i > 3 ? R : ''}">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-[#1d2b4c]">` +
+    g.rows.map((r, i) => `<tr class="even:bg-white/[0.02] hover:bg-white/[0.05]"><td class="px-4 py-2 text-slate-400">${i + 1}</td><td class="px-4 py-2">${esc(r.nama)}</td><td class="px-4 py-2">${esc(r.posisi) || '-'}</td><td class="px-4 py-2">${esc(perLbl(r))}</td><td class="px-4 py-2${R}">${rp(r.kotor)}</td><td class="px-4 py-2${R}">${rp(r.potongan)}</td><td class="px-4 py-2${R} font-bold text-emerald-300">${rp(r.bersih)}</td><td class="px-4 py-2${R}">${rp(bpjsOf(r))}</td></tr>`).join('') +
+    `<tr class="bg-[#16233f] font-bold"><td colspan="4" class="px-4 py-2.5 text-right">SUBTOTAL ${esc(shortCl(g.client))}</td><td class="px-4 py-2.5${R}">${rp(g.t.kotor)}</td><td class="px-4 py-2.5${R}">${rp(g.t.potongan)}</td><td class="px-4 py-2.5${R} text-emerald-300">${rp(g.t.bersih)}</td><td class="px-4 py-2.5${R}">${rp(g.t.bpjs)}</td></tr></tbody></table></div></div>`).join('');
   $('view').innerHTML = sum + det;
 }
 
@@ -3390,7 +3467,7 @@ async function openDetail(row) {
   const t = curTab(), k = cur, F = { nilai: 1, nominal: 1 }, D = { tanggal: 1, tglMulai: 1, tglAkhir: 1 };
   const keys = (k === 'pemasukan' ? [['noTrx', 'No. Transaksi']] : []).concat(t.form.map(f => [f[0], f[1]]));
   const val = (f, r) => F[f] ? rp(r[f]) : D[f] ? fd(r[f]) : (r[f] == null || r[f] === '' ? '-' : esc(r[f]));
-  let h = '<div class="space-y-3 text-sm"><table class="w-full text-left"><tbody class="divide-y divide-[#16213d]">' + keys.map(([f, l]) => `<tr><td class="py-1.5 pr-3 text-xs text-slate-400 whitespace-nowrap align-top">${esc(l)}</td><td class="py-1.5 break-words">${val(f, row)}</td></tr>`).join('');
+  let h = '<div class="space-y-3 text-sm"><table class="w-full text-left"><tbody class="divide-y divide-[#1d2b4c]">' + keys.map(([f, l]) => `<tr><td class="py-1.5 pr-3 text-xs text-slate-400 whitespace-nowrap align-top">${esc(l)}</td><td class="py-1.5 break-words">${val(f, row)}</td></tr>`).join('');
   if (k === 'kontrak') h += `<tr><td class="py-1.5 pr-3 text-xs text-slate-400">Status saat ini</td><td>${ktrBadge(row)} ${esc(ktrSisa(row))}</td></tr>`;
   const att = attOf(k, row.id);
   h += `<tr><td class="py-1.5 pr-3 text-xs text-slate-400">Lampiran</td><td>${att.length ? att.map(a => esc(a.nama)).join(', ') : '-'}</td></tr></tbody></table><div><p class="text-xs font-semibold text-slate-300 mb-1">Riwayat perubahan</p><div id="hist" class="text-xs text-slate-400 max-h-56 overflow-y-auto">Memuat riwayat...</div></div></div>`;
@@ -3398,11 +3475,11 @@ async function openDetail(row) {
   $('ms').classList.add('hidden');
   try {
     const hs = await call('historyOf', k, row.id);
-    if ($('hist')) $('hist').innerHTML = hs.length ? hs.slice(0, 30).map(x => `<div class="py-1 border-b border-[#16213d]"><span class="text-slate-300">${esc(x.waktu)}</span> &middot; ${esc(String(x.user).split('@')[0])} &middot; <b>${esc(x.aksi)}</b><br>${esc(x.detail)}</div>`).join('') : 'Belum ada riwayat.';
+    if ($('hist')) $('hist').innerHTML = hs.length ? hs.slice(0, 30).map(x => `<div class="py-1 border-b border-[#1d2b4c]"><span class="text-slate-300">${esc(x.waktu)}</span> &middot; ${esc(String(x.user).split('@')[0])} &middot; <b>${esc(x.aksi)}</b><br>${esc(x.detail)}</div>`).join('') : 'Belum ada riwayat.';
   } catch (e) { if ($('hist')) $('hist').textContent = 'Riwayat tidak bisa dimuat: ' + (e.message || e); }
 }
 function backupHtml(s) {
-  const c = 'rounded-lg border border-[#16213d] bg-[#050914] p-3', lb = 'text-[11px] text-slate-400';
+  const c = 'rounded-lg border border-[#1d2b4c] bg-[#0a1124] p-3', lb = 'text-[11px] text-slate-400';
   const ok = s.status !== 'GAGAL';
   return `<div class="p-5 space-y-5"><div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">` +
     `<div class="${c}"><p class="${lb}">Backup terakhir berhasil</p><p class="font-bold ${s.last ? 'text-emerald-300' : 'text-amber-300'} mt-1">${esc(s.last || 'Belum pernah')}</p></div>` +
@@ -3413,7 +3490,7 @@ function backupHtml(s) {
     `<div class="${c}"><p class="${lb}">Email notifikasi</p><p class="font-bold text-slate-200 mt-1 break-all">${esc(s.email || 'Creator / ALERT_EMAIL')}</p></div></div>` +
     `<div class="flex flex-wrap gap-2"><button type="button" data-a="bk" data-id="" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg">Backup sekarang</button><button type="button" data-a="bkdl" data-id="" class="px-4 py-2.5 bg-teal-700 hover:bg-teal-600 font-bold rounded-lg">Unduh backup ke laptop (.xlsx)</button><button type="button" data-a="imp" data-id="" class="px-4 py-2.5 bg-violet-700 hover:bg-violet-600 font-bold rounded-lg">Impor lampiran lama (Drive)</button><button type="button" data-a="hari" data-id="" class="px-4 py-2.5 bg-sky-700 hover:bg-sky-600 font-bold rounded-lg">Simpan data hari ini ke Drive</button>${s.folderUrl ? `<a href="${esc(s.folderUrl)}" target="_blank" rel="noopener" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 font-bold rounded-lg">Buka folder backup di Drive</a>` : ''}</div>` +
     `<div class="text-xs text-slate-400 space-y-1"><p>Backup otomatis: salinan seluruh database (Google Sheets) dan sinkron lampiran / foto driver (Google Drive) ke folder "Backup JMM Dashboard". Kalau gagal, notifikasi dikirim lewat email dan WA Bos.</p><p>Ke laptop: apps Script tidak bisa menulis langsung ke komputer. Pasang Google Drive untuk Desktop dan pilih folder "Backup JMM Dashboard" agar tersinkron otomatis, atau pakai tombol unduh di atas.</p></div>` +
-    `<div><p class="text-xs font-semibold text-slate-300 mb-2">Riwayat backup</p><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th class="py-1 pr-3">Waktu</th><th class="pr-3">Jenis</th><th class="pr-3">Status</th><th class="pr-3">Detail</th><th>Detik</th></tr></thead><tbody class="divide-y divide-[#16213d]">${(s.log || []).length ? s.log.map(l => `<tr><td class="py-1 pr-3 whitespace-nowrap">${esc(l.waktu)}</td><td class="pr-3">${esc(l.jenis)}</td><td class="pr-3 ${/gagal/i.test(l.status) ? 'text-red-300' : 'text-emerald-300'}">${esc(l.status)}</td><td class="pr-3 break-words">${esc(l.detail)}</td><td>${l.dtk}</td></tr>`).join('') : '<tr><td colspan="5" class="py-3 text-slate-500">Belum ada riwayat.</td></tr>'}</tbody></table></div></div></div>`;
+    `<div><p class="text-xs font-semibold text-slate-300 mb-2">Riwayat backup</p><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-slate-400"><th class="py-1 pr-3">Waktu</th><th class="pr-3">Jenis</th><th class="pr-3">Status</th><th class="pr-3">Detail</th><th>Detik</th></tr></thead><tbody class="divide-y divide-[#1d2b4c]">${(s.log || []).length ? s.log.map(l => `<tr><td class="py-1 pr-3 whitespace-nowrap">${esc(l.waktu)}</td><td class="pr-3">${esc(l.jenis)}</td><td class="pr-3 ${/gagal/i.test(l.status) ? 'text-red-300' : 'text-emerald-300'}">${esc(l.status)}</td><td class="pr-3 break-words">${esc(l.detail)}</td><td>${l.dtk}</td></tr>`).join('') : '<tr><td colspan="5" class="py-3 text-slate-400">Belum ada riwayat.</td></tr>'}</tbody></table></div></div></div>`;
 }
 async function renderBackup() {
   if (BK_CACHE) $('view').innerHTML = backupHtml(BK_CACHE);
@@ -3477,7 +3554,7 @@ function syncDateLabel(inp) {
   const t = l && l.querySelector('span');
   if (!t) return;
   t.textContent = dmy(inp.value) || 'dd/mm/yyyy';
-  t.classList.toggle('text-slate-500', !inp.value);
+  t.classList.toggle('text-slate-400', !inp.value);
 }
 document.addEventListener('input', e => {
   const inp = e.target;
@@ -3538,7 +3615,7 @@ $('btnAdd').onclick = () => openForm();
 $('mx').onclick = $('mc').onclick = closeM;
 $('btnSwap').onclick = () => {
   const op = DB.drivers.map(d => `<option value="${esc(d.id)}">${esc(d.name)} (${esc(d.status)} H${d.rosterDay})</option>`).join('');
-  const cls = 'w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1';
+  const cls = 'w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1';
   openModal('Quick Swap Roster', `<div class="grid gap-3"><label class="block text-xs text-slate-400">Driver A<select name="a" class="${cls}">${op}</select></label><label class="block text-xs text-slate-400">Driver B<select name="b" class="${cls}">${op}</select></label></div>`,
     async o => {
       if (o.a === o.b) throw new Error('Pilih dua driver yang berbeda.');
@@ -3591,7 +3668,7 @@ let LAST_ACT = Date.now();
 ['click', 'keydown', 'mousemove', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { LAST_ACT = Date.now(); }, { passive: true }));
 setInterval(() => { if (TOKEN && Date.now() - LAST_ACT > 30 * 60 * 1000) { call('logout').catch(() => {}); showLogin('Anda keluar otomatis karena tidak ada aktivitas 30 menit.'); } }, 30000);
 
-const PWCLS = 'w-full bg-[#050914] border border-[#1f2c4d] rounded-lg p-2.5 mt-1';
+const PWCLS = 'w-full bg-[#0a1124] border border-[#27375e] rounded-lg p-2.5 mt-1';
 function openPw() {
   openModal('Ganti Password', `<div class="grid gap-3">
     <label class="block text-xs text-slate-400">Password saat ini<input name="old" type="password" autocomplete="current-password" required class="${PWCLS}"></label>
@@ -3609,8 +3686,8 @@ $('btnPw').onclick = openPw;
 $('btnSw').onclick = async () => {
   try {
     const r = await call('switchList');
-    const rows = r.accounts.map(a => `<button type="button" data-sw="${esc(a.email)}" class="w-full flex items-center justify-between gap-3 rounded-lg border ${a.email === r.current ? 'border-amber-500 bg-amber-500/10' : 'border-[#1f2c4d] bg-[#050914] hover:bg-[#0d1830]'} px-3 py-2.5 text-left text-sm"><span class="truncate">${esc(a.email)}${a.self ? ' (akun saya)' : ''}</span><span class="text-xs text-slate-400 whitespace-nowrap">${esc(ROLE_LBL[a.role] || a.role)}${a.email === r.current ? ' - aktif' : ''}</span></button>`).join('');
-    openModal('Ganti Akun', `<div class="space-y-2">${rows || '<p class="text-slate-500 text-sm">Tidak ada akun lain.</p>'}<p class="text-xs text-slate-500 pt-2">Pindah akun tidak perlu password. Semua perubahan tercatat di AuditLog atas nama akun Anda.</p></div>`, async () => closeM());
+    const rows = r.accounts.map(a => `<button type="button" data-sw="${esc(a.email)}" class="w-full flex items-center justify-between gap-3 rounded-lg border ${a.email === r.current ? 'border-amber-500 bg-amber-500/10' : 'border-[#27375e] bg-[#0a1124] hover:bg-[#16233f]'} px-3 py-2.5 text-left text-sm"><span class="truncate">${esc(a.email)}${a.self ? ' (akun saya)' : ''}</span><span class="text-xs text-slate-400 whitespace-nowrap">${esc(ROLE_LBL[a.role] || a.role)}${a.email === r.current ? ' - aktif' : ''}</span></button>`).join('');
+    openModal('Ganti Akun', `<div class="space-y-2">${rows || '<p class="text-slate-400 text-sm">Tidak ada akun lain.</p>'}<p class="text-xs text-slate-400 pt-2">Pindah akun tidak perlu password. Semua perubahan tercatat di AuditLog atas nama akun Anda.</p></div>`, async () => closeM());
     $('ms').classList.add('hidden');
   } catch (e) { toast(e.message || String(e), true); }
 };
@@ -3641,12 +3718,12 @@ function akCell(u) {
   if (u.role === 'creator') return esc(ROLE_AKSES.creator);
   const em = esc(u.email), n = (u.efektif || []).length;
   const ring = u.aksesCustom ? n + ' fitur dipilih creator' : (n ? 'Bawaan peran (' + n + ' fitur)' : 'Belum ada fitur');
-  return `<details><summary class="cursor-pointer text-sky-300 font-semibold">${ring}${u.bisaHapus ? ' - boleh hapus' : ''}${u.prev === 'Ya' ? ' - preview slip' : ''} &#9662;</summary><div class="mt-2 p-3 rounded-lg border border-[#1f2c4d] bg-[#050914] min-w-[300px]">${aksesPicker(u.efektif || [])}<label class="block text-xs text-slate-400 mt-2">Hapus data<select data-hp class="${PWCLS}">${HAPUS_OPT(u.hapus)}</select></label><label class="flex items-center gap-1.5 text-xs text-slate-200 mt-2"><input type="checkbox" data-pv ${u.prev === 'Ya' ? 'checked' : ''}>Boleh Preview PDF slip gaji (butuh akses Slip Gaji; kirim slip tetap creator saja)</label><div class="mt-3 flex flex-wrap gap-2"><button type="button" data-ua="akses" data-ue="${em}" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white">Simpan akses</button><button type="button" data-ua="aksesreset" data-ue="${em}" class="px-3 py-1.5 rounded-lg border border-[#1f2c4d] text-xs text-slate-300 hover:bg-slate-800">Kembali ke bawaan peran</button></div></div></details>`;
+  return `<details><summary class="cursor-pointer text-sky-300 font-semibold">${ring}${u.bisaHapus ? ' - boleh hapus' : ''}${u.prev === 'Ya' ? ' - preview slip' : ''} &#9662;</summary><div class="mt-2 p-3 rounded-lg border border-[#27375e] bg-[#0a1124] min-w-[300px]">${aksesPicker(u.efektif || [])}<label class="block text-xs text-slate-400 mt-2">Hapus data<select data-hp class="${PWCLS}">${HAPUS_OPT(u.hapus)}</select></label><label class="flex items-center gap-1.5 text-xs text-slate-200 mt-2"><input type="checkbox" data-pv ${u.prev === 'Ya' ? 'checked' : ''}>Boleh Preview PDF slip gaji (butuh akses Slip Gaji; kirim slip tetap creator saja)</label><div class="mt-3 flex flex-wrap gap-2"><button type="button" data-ua="akses" data-ue="${em}" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white">Simpan akses</button><button type="button" data-ua="aksesreset" data-ue="${em}" class="px-3 py-1.5 rounded-lg border border-[#27375e] text-xs text-slate-300 hover:bg-slate-800">Kembali ke bawaan peran</button></div></div></details>`;
 }
 const ROLE_AKSES = { creator: 'Semua fitur (termasuk Backup)', manager: 'Proforma, Rekap Invoice, Rekap BAST, Rekap PO, Kontrak Client, Pemasukan, Kategori Pemasukan, Pengeluaran, Master Unit, Master Client', admin: 'Input/ubah: Rekap Harian, CCF Medco, PO, Kontrak, Proforma, Invoice, BAST, Slip Gaji, Master Client, Driver, Unit, Identitas. Matrix Roster. Hanya boleh menghapus data CCF Medco dan Rekap Harian' };
 let USERS = [];
 async function renderUsers() {
-  $('view').innerHTML = '<p class="p-8 text-center text-slate-500">Memuat pengguna...</p>';
+  $('view').innerHTML = '<p class="p-8 text-center text-slate-400">Memuat pengguna...</p>';
   try { USERS = await call('userList'); }
   catch (e) { if (!/SESI_HABIS/.test(String(e && e.message))) $('view').innerHTML = `<p class="p-8 text-red-300">${esc(e.message || e)}</p>`; return; }
   if (cur !== 'users') return;
@@ -3659,11 +3736,11 @@ async function renderUsers() {
       `<button data-ua="reset" data-ue="${esc(u.email)}" class="${b}text-violet-300">Reset password</button>` +
       (u.pending ? `<button data-ua="approve" data-ue="${esc(u.email)}" class="${b}text-emerald-300">Setujui</button><button data-ua="reject" data-ue="${esc(u.email)}" class="${b}text-red-300">Tolak</button>` : '') +
       (isC ? '' : `<button data-ua="del" data-ue="${esc(u.email)}" class="${b}text-red-300">Hapus</button>`);
-    return `<tr class="hover:bg-slate-800/30"><td class="px-4 py-3 break-all">${esc(u.email)}</td><td class="px-4 py-3">${badge(ROLE_LBL[u.role] || '-', isC ? 'bg-red-600/20 text-red-300' : 'bg-indigo-500/20 text-indigo-300')}</td><td class="px-4 py-3 text-xs text-slate-400">${akCell(u)}</td><td class="px-4 py-3">${st}${pend}</td><td class="px-4 py-3 text-xs text-slate-400">${esc(u.login || '-')}</td><td class="px-4 py-3 whitespace-nowrap">${act}</td></tr>`;
+    return `<tr class="even:bg-white/[0.02] hover:bg-white/[0.05]"><td class="px-4 py-3 break-all">${esc(u.email)}</td><td class="px-4 py-3">${badge(ROLE_LBL[u.role] || '-', isC ? 'bg-red-600/20 text-red-300' : 'bg-indigo-500/20 text-indigo-300')}</td><td class="px-4 py-3 text-xs text-slate-400">${akCell(u)}</td><td class="px-4 py-3">${st}${pend}</td><td class="px-4 py-3 text-xs text-slate-400">${esc(u.login || '-')}</td><td class="px-4 py-3 whitespace-nowrap">${act}</td></tr>`;
   }).join('');
   const th = 'px-4 py-4 text-xs font-bold uppercase tracking-wide text-slate-200 text-left';
   $('view').innerHTML = `<div class="p-4 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-slate-400">Creator memegang semua fitur. Manager, admin, dan staf dibuat di sini; klik kolom Akses untuk memilih fitur yang boleh mereka lihat. Permintaan ganti password dari mereka harus Anda setujui.</p><button data-ua="add" data-ue="" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg">+ Tambah pengguna</button></div>` +
-    `<div class="overflow-x-auto"><table class="w-full text-[13px]"><thead><tr class="border-b border-[#16213d]"><th class="${th}">Email</th><th class="${th}">Peran</th><th class="${th}">Akses</th><th class="${th}">Status</th><th class="${th}">Login terakhir</th><th class="${th}">Aksi</th></tr></thead><tbody class="divide-y divide-[#16213d]">${rows}</tbody></table></div>`;
+    `<div class="overflow-x-auto"><table class="w-full text-[13px]"><thead><tr class="border-b border-[#1d2b4c]"><th class="${th}">Email</th><th class="${th}">Peran</th><th class="${th}">Akses</th><th class="${th}">Status</th><th class="${th}">Login terakhir</th><th class="${th}">Aksi</th></tr></thead><tbody class="divide-y divide-[#1d2b4c]">${rows}</tbody></table></div>`;
 }
 async function userAct(a, email, btn) {
   const done = async r => { toast(r.message, !r.success); await load(); };
@@ -3673,11 +3750,11 @@ async function userAct(a, email, btn) {
       <label class="block text-xs text-slate-400">Email<input name="email" type="email" required class="${PWCLS}"></label>
       <label class="block text-xs text-slate-400">Peran<select name="role" class="${PWCLS}"><option value="manager">Manager (Proforma, Invoice, BAST, Pengeluaran, Master Unit, Master Client)</option><option value="admin">Admin (input Operasional, Administrasi, Slip Gaji, Master Data)</option><option value="staff">Staf (hanya fitur yang Anda centang di bawah)</option></select></label>
       <label class="block text-xs text-slate-400">Akses fitur<select name="mode" class="${PWCLS}"><option value="default">Bawaan peran (Manager dan Admin saja)</option><option value="custom">Pilih sendiri (centang di bawah; wajib untuk Staf)</option></select></label>
-      <div class="rounded-lg border border-[#1f2c4d] p-3">${aksesPicker([])}</div>
+      <div class="rounded-lg border border-[#27375e] p-3">${aksesPicker([])}</div>
       <label class="block text-xs text-slate-400">Hapus data<select name="hapus" class="${PWCLS}">${HAPUS_OPT('')}</select></label>
       <label class="flex items-center gap-1.5 text-xs text-slate-200"><input type="checkbox" name="preview" value="Ya">Boleh Preview PDF slip gaji (kirim slip tetap creator saja)</label>
       <label class="block text-xs text-slate-400">Password awal (minimal 8 karakter, ada huruf dan angka)<input name="pw" type="text" autocomplete="off" required minlength="8" class="${PWCLS}"></label>
-      <p class="text-xs text-slate-500">Beri tahu pemiliknya password awal ini, lalu minta dia menggantinya lewat "Ganti Password".</p></div>`,
+      <p class="text-xs text-slate-400">Beri tahu pemiliknya password awal ini, lalu minta dia menggantinya lewat "Ganti Password".</p></div>`,
       async o => {
         const list = Object.keys(o).filter(k => k.indexOf('t_') === 0).map(k => k.slice(2));
         const r = await call('userAdmin', 'add', o.email, { role: o.role, pw: o.pw, akses: o.mode === 'custom' || o.role === 'staff' ? list : null, hapus: o.hapus, preview: o.preview === 'Ya' ? 'Ya' : '' });
@@ -3706,6 +3783,58 @@ async function userAct(a, email, btn) {
   if (a === 'del' && confirm('Hapus pengguna ' + u.email + '? Tindakan ini tidak bisa dibatalkan.')) return wrap(async () => done(await call('userAdmin', 'delete', u.email)));
 }
 $('view').addEventListener('click', e => { const b = e.target.closest('button[data-ua]'); if (b) userAct(b.dataset.ua, b.dataset.ue, b); });
+
+// ---------- Perapian tampilan (murni tampilan: sidebar, menu profil, Ekspor, ringkasan) ----------
+(function () {
+  const g = id => document.getElementById(id);
+  const sget = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const sset = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* abaikan */ } };
+  const desk = () => window.matchMedia('(min-width: 768px)').matches;
+  const sb = g('sidebar'), ov = g('sbOverlay');
+  const openDrawer = () => { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); document.body.style.overflow = 'hidden'; };
+  const closeDrawer = () => { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); document.body.style.overflow = ''; };
+  g('btnMenu').onclick = openDrawer; g('btnMenuX').onclick = closeDrawer; ov.onclick = closeDrawer;
+  sb.addEventListener('click', e => { if (e.target.closest('[data-k],[data-add]') && !desk()) closeDrawer(); });
+  window.addEventListener('resize', () => { if (desk()) closeDrawer(); });
+  // ciutkan sidebar (desktop)
+  const applyCollapse = () => document.body.classList.toggle('sb-collapsed', sget('jmm_sb') === '1');
+  g('sbCollapse').onclick = () => { sset('jmm_sb', sget('jmm_sb') === '1' ? '0' : '1'); applyCollapse(); };
+  applyCollapse();
+  // menu profil + menu Ekspor
+  const pairs = [['btnProfile', 'profileMenu'], ['btnExp', 'expMenu']];
+  const closePop = except => pairs.forEach(([b, m]) => { if (m !== except) { g(m).classList.add('hidden'); g(b).setAttribute('aria-expanded', 'false'); } });
+  pairs.forEach(([b, m]) => { g(b).onclick = e => { e.stopPropagation(); const open = g(m).classList.contains('hidden'); closePop(); g(m).classList.toggle('hidden', !open); g(b).setAttribute('aria-expanded', String(open)); }; });
+  document.addEventListener('click', e => { if (!e.target.closest('#profileMenu,#expMenu,#btnProfile,#btnExp') || e.target.closest('#profileMenu button,#expMenu button')) closePop(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePop(); if (!desk()) closeDrawer(); } });
+  // ringkasan bisa dilipat (default tertutup di HP)
+  const kpiOpen = () => { const v = sget('jmm_kpi'); return v === null ? desk() : v === '1'; };
+  const applyKpi = () => { const o = kpiOpen(); g('kpiBody').classList.toggle('hidden', !o); g('kpiChev').style.transform = o ? '' : 'rotate(-90deg)'; g('btnKpi').setAttribute('aria-expanded', String(o)); };
+  g('btnKpi').onclick = () => { sset('jmm_kpi', kpiOpen() ? '0' : '1'); applyKpi(); };
+  applyKpi();
+  const RP = /^(-\s*)?Rp\.?\s?-?[\d.,]+$/;
+  window.uiAfterRender = function () {
+    const t = typeof curTab === 'function' ? curTab() : null;
+    if (t) g('hdrTitle').textContent = t.l;
+    if (DB && DB.email) {
+      g('avatar').textContent = (DB.email[0] || '?').toUpperCase();
+      g('roleChip').textContent = ROLE_LBL[DB.role] || DB.role || '';
+    }
+    g('expWrap').classList.toggle('hidden', !['btnPv', 'btnPdf', 'btnXls'].some(id => !g(id).classList.contains('hidden')));
+    g('kpiSec').classList.toggle('hidden', !g('cards').children.length);
+    applyKpi();
+    // kolom rupiah rata kanan
+    document.querySelectorAll('#view table').forEach(tb => {
+      const ths = tb.querySelectorAll('thead tr:last-child th'), rows = [...tb.querySelectorAll('tbody tr')].filter(r => r.children.length === ths.length);
+      ths.forEach((th, j) => {
+        let n = 0, ok = true;
+        rows.forEach(r => { const x = r.children[j].textContent.trim(); if (!x || x === '-') return; if (RP.test(x)) n++; else ok = false; });
+        if (ok && n) { th.classList.add('text-right'); rows.forEach(r => r.children[j].classList.add('text-right', 'tabular-nums')); }
+      });
+    });
+  };
+  const _render = render;
+  render = function () { const r = _render.apply(this, arguments); try { window.uiAfterRender(); } catch (e) { console.error(e); } return r; };
+})();
 setInterval(() => { $('clock').textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB'; }, 1000);
 // Data otomatis diperbarui tiap 60 detik (tidak mengganggu saat form / lampiran sedang dibuka)
 setInterval(() => { if (!TOKEN || document.hidden) return; if (['modal', 'att', 'pv', 'bpv'].some(id => !$(id).classList.contains('hidden'))) return; load(); }, 60000);
