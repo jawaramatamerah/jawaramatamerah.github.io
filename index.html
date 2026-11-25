@@ -53,6 +53,29 @@
   /* Tabel */
   #view table { font-variant-numeric: tabular-nums; }
   #view thead tr { background: rgba(255,255,255,.025); }
+
+  /* Filter seragam */
+  #filters select, .fbox { height: 40px; background: var(--surf); border: 1px solid var(--line2); border-radius: 10px; padding: 0 12px; font-size: 13px; color: #e2e8f0; }
+  #filters select { min-width: 150px; max-width: 240px; }
+  #filters .fbox input { background: transparent; outline: none; width: 100%; font-size: 13px; }
+  #filters .fbox:focus-within, #filters select:focus, #btnPeriode:focus-visible { border-color: #f87171; }
+  #filtBody { display: contents; }
+  #dates { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: min(340px, 92vw); padding: 12px; gap: 8px; background: var(--surf); border: 1px solid var(--line2); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.45); font-size: 12px; color: #94a3b8; align-items: center; }
+  #dates #dlabel { flex: 1 1 100%; font-weight: 600; color: #cbd5e1; }
+  #dates select { flex: 1 1 100%; max-width: none; background: var(--bg); }
+  #dates label { flex: 1 1 120px; min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line2); display: inline-flex; align-items: center; }
+  #btnPeriode.on { display: inline-flex; }
+  #btnReset.on { display: inline-flex; }
+  @media (max-width: 767px) {
+    #filters .fbox:first-child { flex: 1 1 0; }
+    #filtBody { display: none; }
+    #filtBody.open { display: flex; flex-direction: column; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 48; max-height: 82vh; overflow-y: auto; padding: 16px 16px 20px; background: var(--surf); border-radius: 18px 18px 0 0; box-shadow: 0 -12px 32px rgba(0,0,0,.5); }
+    #filtBody select { max-width: none; width: 100%; height: 44px; }
+    #filtBody #xf { display: contents; }
+    #btnPeriode { display: none !important; }
+    #dateWrap #dates { position: static; right: auto; width: 100%; box-shadow: none; border-color: var(--line); }
+    #btnReset { height: 40px; justify-content: center; }
+  }
   .empty-state { padding: 56px 16px; text-align: center; color: #94a3b8; }
   @keyframes jspin { to { transform: rotate(360deg); } }
   /* Input tanggal dll di filter */
@@ -138,10 +161,25 @@
       <span id="count" class="text-xs text-slate-400 font-normal"></span>
     </div>
     <div id="filters" class="flex flex-wrap items-center gap-2">
+      <div class="fbox flex items-center gap-2 flex-1 min-w-[200px] md:max-w-md">
+        <svg class="w-4 h-4 text-slate-400 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Cari..." class="bg-transparent outline-none text-sm w-full">
+      </div>
+      <button type="button" id="btnFilt" class="fbox md:hidden inline-flex items-center gap-2 text-sm font-medium text-slate-200" aria-expanded="false">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>Filter<span id="filtBadge" class="hidden min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[11px] leading-[18px] text-center"></span>
+      </button>
+      <div id="filtBack" class="hidden fixed inset-0 z-[47] bg-black/60 md:hidden"></div>
+      <div id="filtBody">
+        <div class="md:hidden flex items-center justify-between pb-1"><p class="text-sm font-semibold">Filter</p><button type="button" id="btnFiltX" class="icon-btn" aria-label="Tutup"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
       <select id="cf" class="bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"></select>
       <div id="xf" class="contents"></div>
       <select id="tf" title="Filter tipe CCF" class="hidden bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"><option value="ALL">Semua Tipe (Mob + Demob)</option><option value="MOB">Mobilization saja</option><option value="DEMOB">Demobilization saja</option></select>
       <select id="rf" title="Filter roster" class="hidden bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 text-sm"></select>
+        <div id="dateWrap" class="relative">
+          <button type="button" id="btnPeriode" class="fbox hidden items-center gap-2 text-sm text-slate-200" aria-haspopup="true" aria-expanded="false">
+            <svg class="w-4 h-4 text-slate-400 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span id="periodeLbl" class="truncate max-w-[210px]">Semua waktu</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
       <span id="dates" class="hidden flex-wrap items-center gap-2 bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-1.5 text-xs text-slate-400">
         <span id="dlabel">Periode:</span>
         <select id="dp" title="Pilih periode cepat (tanggal, minggu, bulan, tahun) atau Kustom untuk rentang sendiri" class="bg-[#111c38] border border-[#27375e] rounded-md px-2 py-1 text-xs text-slate-200"><option value="semua">Semua waktu</option><option value="hari">Hari ini</option><option value="minggu">Minggu ini</option><option value="bulan">Bulan ini</option><option value="lalu">Bulan lalu</option><option value="tahun">Tahun ini</option><option value="kustom">Kustom</option></select>
@@ -150,12 +188,13 @@
         s/d
         <label class="relative inline-flex items-center gap-1.5 rounded-md border border-[#27375e] px-2 py-1 text-sm cursor-pointer hover:bg-[#16233f]"><span class="text-slate-400">dd/mm/yyyy</span><svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="d2" type="date" class="dfull absolute inset-0 w-full h-full opacity-0 cursor-pointer"></label>
       </span>
-      <div class="flex items-center gap-2 bg-[#0a1124] border border-[#27375e] rounded-lg px-3 py-2.5 w-full sm:w-72">
-        <svg class="w-4 h-4 text-slate-400 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Cari..." class="bg-transparent outline-none text-sm w-full">
+        </div>
+        <button type="button" id="btnReset" class="hidden items-center gap-1.5 h-10 px-2 text-xs font-medium text-red-300 hover:text-red-200 hover:underline" data-reset="1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>Reset filter
+        </button>
+        <button type="button" id="btnApply" class="md:hidden h-11 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold mt-1">Terapkan</button>
       </div>
     </div>
-
     <div id="actions" class="flex flex-wrap items-center gap-2">
     <button id="btnAdd" class="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50">
       <svg class="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1671,7 +1710,7 @@ function render() {
   renderOps(rows);
   const cell = (c, r) => c[2] ? c[2](r) : (esc(r[c[0]]) || '-');
   if (!rows.length) {
-    $('view').innerHTML = '<div class="empty-state"><svg class="w-10 h-10 mx-auto mb-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"/></svg><p class="text-sm font-medium text-slate-200">Belum ada data</p><p class="text-xs mt-1">Pilih "Tambah Data" untuk mulai, atau ubah filter di atas.</p></div>';
+    $('view').innerHTML = '<div class="empty-state"><svg class="w-10 h-10 mx-auto mb-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7"/></svg>' + (window.filterActive && window.filterActive() ? '<p class="text-sm font-medium text-slate-200">Tidak ada data untuk filter ini</p><p class="text-xs mt-1">Coba ubah atau hapus filter.</p><button type="button" data-reset="1" class="mt-4 h-10 px-4 rounded-lg border border-[#27375e] text-sm text-slate-200 hover:bg-[#16233f]">Reset filter</button>' : '<p class="text-sm font-medium text-slate-200">Belum ada data</p><p class="text-xs mt-1">Pilih "Tambah Data" untuk mulai.</p>') + '</div>';
     return;
   }
   // Tabel untuk layar lebar, kartu untuk HP
@@ -3817,7 +3856,51 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
   g('btnKpi').onclick = () => { sset('jmm_kpi', kpiOpen() ? '0' : '1'); applyKpi(); };
   applyKpi();
   const RP = /^(-\s*)?Rp\.?\s?-?[\d.,]+$/;
+  // ---- Filter: tombol Periode, panel Filter di HP, Reset ----
+  let perOpen = false;
+  const defDp = () => (typeof cur !== 'undefined' && cur === 'timesheet') ? 'bulan' : 'semua';
+  const fmtD = v => v ? v.split('-').reverse().join('/') : '';
+  const visible = id => !g(id).classList.contains('hidden');
+  const filterCount = () => {
+    let c = 0;
+    if ((g('cf').value || 'ALL') !== 'ALL') c++;
+    document.querySelectorAll('#xf [data-xf]').forEach(s => { if (s.value !== 'ALL') c++; });
+    if (visible('tf') && g('tf').value !== 'ALL') c++;
+    if (visible('rf') && g('rf').value !== 'ALL') c++;
+    if (g('dates').dataset.dated === '1' && g('dp').value !== defDp()) c++;
+    return c;
+  };
+  window.filterActive = () => filterCount() > 0 || !!g('q').value.trim();
+  window.resetFilters = () => {
+    g('q').value = ''; g('cf').value = 'ALL'; g('tf').value = 'ALL'; g('rf').value = 'ALL';
+    document.querySelectorAll('#xf [data-xf]').forEach(s => { s.value = 'ALL'; XFV[cur + ':' + s.dataset.xf] = 'ALL'; });
+    if (g('km')) g('km').value = 'irisan';
+    applyPreset(defDp());
+    perOpen = false;
+    render();
+  };
+  const setPeriod = open => { perOpen = open; g('btnPeriode').setAttribute('aria-expanded', String(open)); g('dates').classList.toggle('hidden', !(g('dates').dataset.dated === '1' && (open || !desk()))); };
+  g('btnPeriode').onclick = e => { e.stopPropagation(); setPeriod(!perOpen); };
+  document.addEventListener('click', e => { if (perOpen && !e.target.closest('#dateWrap')) setPeriod(false); });
+  g('dp').addEventListener('change', () => { if (g('dp').value !== 'kustom') setPeriod(false); });
+  const openSheet = o => { g('filtBody').classList.toggle('open', o); g('filtBack').classList.toggle('hidden', !o); g('btnFilt').setAttribute('aria-expanded', String(o)); document.body.style.overflow = o ? 'hidden' : ''; };
+  g('btnFilt').onclick = () => openSheet(true);
+  ['filtBack', 'btnFiltX', 'btnApply'].forEach(id => { g(id).onclick = () => openSheet(false); });
+  document.addEventListener('click', e => { const r = e.target.closest('[data-reset]'); if (r) window.resetFilters(); });
+  const filterUi = () => {
+    const dated = visible('dates');
+    g('dates').dataset.dated = dated ? '1' : '0';
+    g('btnPeriode').classList.toggle('on', dated);
+    const d1 = g('d1').value, d2 = g('d2').value, dp = g('dp'), o = dp.selectedOptions[0];
+    g('periodeLbl').textContent = dp.value === 'kustom' ? ((d1 || d2) ? (fmtD(d1) || '...') + ' - ' + (fmtD(d2) || '...') : 'Kustom') : (o ? o.textContent : 'Periode');
+    g('dates').classList.toggle('hidden', !(dated && (perOpen || !desk())));
+    const n = filterCount();
+    g('filtBadge').textContent = n; g('filtBadge').classList.toggle('hidden', !n);
+    g('btnReset').classList.toggle('on', window.filterActive());
+    g('btnFilt').classList.toggle('hidden', !visible('filters'));
+  };
   window.uiAfterRender = function () {
+    filterUi();
     const t = typeof curTab === 'function' ? curTab() : null;
     if (t) g('hdrTitle').textContent = t.l;
     if (DB && DB.email) {
