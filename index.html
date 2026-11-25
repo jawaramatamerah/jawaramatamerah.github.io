@@ -31,7 +31,7 @@
   .icon-btn:hover { background: var(--hov); }
   /* Sidebar */
   #sidebar { width: 264px; max-width: 86vw; border-right: 1px solid var(--line); }
-  @media (min-width: 768px) { .sb-collapsed #sidebar { width: 72px; } .sb-collapsed .sb-label { display: none; } .sb-collapsed #sbChev { transform: rotate(180deg); } .sb-collapsed #sidebar > div:first-child { justify-content: center; padding: 0; } .sb-collapsed #sbCollapse { padding: 0; justify-content: center; } .sb-collapsed .nav-add { display: none; } .sb-collapsed .nav-gh { height: 1px; margin: 6px 12px; background: var(--line); } .sb-collapsed .nav-item { justify-content: center; padding: 0; } }
+  @media (min-width: 768px) { .sb-collapsed #sidebar { width: 72px; } .sb-collapsed .sb-label { display: none; } .sb-collapsed #sbChev { transform: rotate(180deg); } .sb-collapsed #sbBrand { padding: 16px 0 8px; } .sb-collapsed #sbBrand img { height: 36px; } .sb-collapsed #sbCollapse { padding: 0; justify-content: center; } .sb-collapsed .nav-add { display: none; } .sb-collapsed .nav-gh { height: 1px; margin: 6px 12px; background: var(--line); } .sb-collapsed .nav-item { justify-content: center; padding: 0; } }
   .nav-gh { padding: 0 12px; margin-bottom: 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
   .nav-row { position: relative; display: flex; align-items: center; border-radius: 10px; }
   .nav-row:hover { background: var(--hov); }
@@ -67,13 +67,13 @@
 
 <!-- Sidebar: satu-satunya navigasi -->
 <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-[45] h-screen flex flex-col bg-[#111c38] -translate-x-full md:translate-x-0 transition-transform duration-200" aria-label="Navigasi">
-  <div class="flex items-center gap-3 px-4 h-16 flex-none">
-    <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-9 w-auto rounded-md flex-none">
-    <div class="sb-label min-w-0">
-      <p class="text-sm font-semibold leading-tight truncate">Jawara Mata Merah</p>
-      <p id="addr" class="text-[11px] text-slate-400 truncate"></p>
+  <div id="sbBrand" class="relative flex flex-col items-center text-center gap-2 px-4 pt-5 pb-4 flex-none">
+    <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-16 w-auto rounded-lg flex-none">
+    <div class="sb-label min-w-0 w-full">
+      <p class="text-sm font-semibold leading-tight">Jawara Mata Merah</p>
+      <p id="addr" class="text-[11px] text-slate-400 leading-snug mt-0.5"></p>
     </div>
-    <button type="button" id="btnMenuX" class="md:hidden ml-auto icon-btn" aria-label="Tutup menu"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <button type="button" id="btnMenuX" class="md:hidden absolute top-3 right-3 icon-btn" aria-label="Tutup menu"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
   <nav id="tabs" class="flex-1 overflow-y-auto px-3 py-2 space-y-5" aria-label="Menu utama"></nav>
   <div id="menus" class="hidden"></div>
