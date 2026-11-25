@@ -647,6 +647,10 @@ async function callFn_(name, body) {
   }
   return r.data || { success: false, message: 'Tidak ada jawaban dari server.' };
 }
+const OT_KEY = 'jmm_ot';
+const otGet_ = () => { try { return sessionStorage.getItem(OT_KEY) || ''; } catch (e) { return ''; } };
+const otSet_ = v => { try { if (v) sessionStorage.setItem(OT_KEY, v); else sessionStorage.removeItem(OT_KEY); } catch (e) { /* abaikan */ } };
+const otOrigin_ = () => { try { const b = otGet_().split('.')[0]; return b ? JSON.parse(atob(b.replace(/-/g, '+').replace(/_/g, '/'))).o || '' : ''; } catch (e) { return ''; } }; // hanya untuk tampilan; pemeriksaan sebenarnya di server
 let LAST_SYNC = '', LAST_SLIP = '', LAST_INV = '';
 const API = {
   async login(email, pw) {
@@ -656,10 +660,11 @@ const API = {
     if (r.error) throw new Error(/network|fetch/i.test(r.error.message) ? friendly(r.error) : 'Email atau password salah, atau akun tidak aktif.');
     const m = await sb.rpc('app_me');
     if (m.error || !m.data) { await sb.auth.signOut(); throw new Error('Email atau password salah, atau akun tidak aktif.'); }
+    otSet_('');
     sb.rpc('app_touch_login').then(() => {}, () => {});
     return { token: 'sb', email: m.data.email, role: m.data.role };
   },
-  async logout() { try { await sb.auth.signOut(); } catch (e) { /* abaikan */ } return true; },
+  async logout() { otSet_(''); try { await sb.auth.signOut(); } catch (e) { /* abaikan */ } return true; },
 
   async getAllData() {
     const [c, cfg, att] = await Promise.all([me_(), settings_(), sb.from('lampiran').select('*').order('ts', { ascending: false })]);
@@ -669,7 +674,7 @@ const API = {
     if (tabs.indexOf('slip') >= 0 && LAST_SLIP !== todayIso_()) { try { await sb.rpc('app_sync_slip'); } catch (e) { /* abaikan */ } LAST_SLIP = todayIso_(); } // slip bulan lalu + bulan ini ikut timesheet // Rekap Harian hari ini ikut terisi dari CCF
     const keys = Object.keys(TBL).filter(k => tabs.indexOf(k) >= 0 || k === 'clients');
     const res = await Promise.all(keys.map(k => read_(k).then(rows => [k, rows])));
-    const out = { role: c.role, email: c.email, origin: '', canSwitch: false, tabs: tabs, canDel: !!c.canDel, delTabs: c.delTabs || [], canPrev: !!c.canPrev, settings: cfg, waAuto: false, pendingPw: 0, backup: null };
+    const out = { role: c.role, email: c.email, origin: (otOrigin_() && otOrigin_() !== String(c.email).toLowerCase()) ? otOrigin_() : '', canSwitch: true, tabs: tabs, canDel: !!c.canDel, delTabs: c.delTabs || [], canPrev: !!c.canPrev, settings: cfg, waAuto: false, pendingPw: 0, backup: null };
     Object.keys(TBL).forEach(k => { out[k] = []; });
     res.forEach(([k, rows]) => { out[k] = rows; });
     out.slip = out.slip.map(x => Object.assign(x, hitungSlip_(x, cfg), { email: emailFor_(x, out.identitas), wa: waFor_(x, out.identitas) }));
@@ -944,8 +949,22 @@ const API = {
     if (d.nonaktif) return { success: false, message: 'Input Harian otomatis sedang dimatikan di Pengaturan.' };
     return { success: true, message: 'Sinkron CCF selesai: ' + d.tambah + ' baris ditambah, ' + d.ubah + ' diperbarui, ' + d.hapus + ' dihapus.' };
   },
-  async switchList() { return { origin: '', current: '', accounts: [] }; },
-  async switchAccount() { return NA('Pindah akun'); }
+  async switchList() {
+    await me_();
+    const r = await callFn_('pindah-akun', { action: 'list', ot: otGet_() });
+    if (r.success === false) throw new Error(r.message);
+    return { origin: r.origin, current: r.current, accounts: r.accounts || [] };
+  },
+  async switchAccount(email) {
+    await me_();
+    const r = await callFn_('pindah-akun', { action: 'switch', email: email, ot: otGet_() });
+    if (r.success === false) throw new Error(r.message);
+    const v = await sb.auth.verifyOtp({ token_hash: r.token_hash, type: 'magiclink' });
+    if (v.error || !v.data || !v.data.session) throw new Error('Gagal pindah akun: ' + ((v.error && v.error.message) || 'sesi tidak terbentuk') + '. Silakan login ulang.');
+    otSet_(r.ot || '');
+    LAST_SYNC = ''; LAST_SLIP = ''; LAST_INV = '';
+    return { success: true, message: r.message };
+  },
 };
 window.JMM_API = API;
 window.JMM_SB = sb;
