@@ -31,7 +31,7 @@
   .icon-btn:hover { background: var(--hov); }
   /* Sidebar */
   #sidebar { width: 264px; max-width: 86vw; border-right: 1px solid var(--line); }
-  @media (min-width: 768px) { .sb-collapsed #sidebar { width: 72px; } .sb-collapsed .sb-label { display: none; } .sb-collapsed #sbChev { transform: rotate(180deg); } .sb-collapsed #sbBrand { padding: 16px 0 8px; } .sb-collapsed #sbBrand img { height: 36px; } .sb-collapsed #sbCollapse { padding: 0; justify-content: center; } .sb-collapsed .nav-add { display: none; } .sb-collapsed .nav-gh { height: 1px; margin: 6px 12px; background: var(--line); } .sb-collapsed .nav-item { justify-content: center; padding: 0; } }
+  @media (min-width: 768px) { .sb-collapsed #sidebar { width: 72px; } .sb-collapsed .sb-label { display: none; } .sb-collapsed #sbChev { transform: rotate(180deg); } .sb-collapsed #sbBrand { display: none; } .sb-collapsed #sbCollapse { padding: 0; justify-content: center; } .sb-collapsed .nav-add { display: none; } .sb-collapsed .nav-gh { height: 1px; margin: 6px 12px; background: var(--line); } .sb-collapsed .nav-item { justify-content: center; padding: 0; } }
   .nav-gh { padding: 0 12px; margin-bottom: 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
   .nav-row { position: relative; display: flex; align-items: center; border-radius: 10px; }
   .nav-row:hover { background: var(--hov); }
@@ -67,8 +67,7 @@
 
 <!-- Sidebar: satu-satunya navigasi -->
 <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-[45] h-screen flex flex-col bg-[#111c38] -translate-x-full md:translate-x-0 transition-transform duration-200" aria-label="Navigasi">
-  <div id="sbBrand" class="relative flex flex-col items-center text-center gap-2 px-4 pt-5 pb-4 flex-none">
-    <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-16 w-auto rounded-lg flex-none">
+  <div id="sbBrand" class="relative flex flex-col items-center text-center gap-2 px-4 pt-5 pb-3 flex-none">
     <div class="sb-label min-w-0 w-full">
       <p class="text-sm font-semibold leading-tight">Jawara Mata Merah</p>
       <p id="addr" class="text-[11px] text-slate-400 leading-snug mt-0.5"></p>
@@ -84,12 +83,15 @@
 
 <div class="flex-1 min-w-0 flex flex-col">
 <!-- Header ramping -->
-<header class="sticky top-0 z-30 h-16 flex-none flex items-center gap-3 px-4 sm:px-6 bg-[#0a1124]/95 backdrop-blur border-b border-[#1d2b4c]">
+<header class="sticky top-0 z-30 h-[72px] flex-none grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 bg-[#0a1124]/95 backdrop-blur border-b border-[#1d2b4c]">
+  <div class="flex items-center gap-3 min-w-0">
   <button type="button" id="btnMenu" class="md:hidden icon-btn" aria-label="Buka menu"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-  <h1 id="hdrTitle" class="text-base sm:text-lg font-semibold truncate">CV. Jawara Mata Merah</h1>
-  <div class="ml-auto flex items-center gap-2 sm:gap-4">
-    <div class="flex items-center gap-1.5 text-slate-300">
-      <svg class="w-4 h-4 text-slate-400 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  <h1 id="hdrTitle" class="hidden sm:block text-base sm:text-lg font-semibold truncate">CV. Jawara Mata Merah</h1>
+  </div>
+  <img data-logo alt="Logo CV. Jawara Mata Merah" class="h-12 sm:h-14 w-auto rounded-lg justify-self-center">
+  <div class="flex items-center justify-end gap-2 sm:gap-4 min-w-0">
+    <div class="hidden sm:flex items-center gap-1.5 text-slate-300 whitespace-nowrap">
+      <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       <span id="clock" class="font-mono text-[11px] sm:text-xs tabular-nums"></span>
     </div>
     <div id="userBox" class="hidden relative items-center">
