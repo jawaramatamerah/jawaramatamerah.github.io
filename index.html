@@ -627,7 +627,7 @@ const detailTxt = (d, aksi) => {
 };
 
 /* ===================== API (nama sama dengan fungsi di Code.gs) ===================== */
-let LAST_SYNC = '', LAST_SLIP = '';
+let LAST_SYNC = '', LAST_SLIP = '', LAST_INV = '';
 const API = {
   async login(email, pw) {
     const e = String(email || '').trim().toLowerCase();
@@ -645,6 +645,7 @@ const API = {
     const [c, cfg, att] = await Promise.all([me_(), settings_(), sb.from('lampiran').select('*').order('ts', { ascending: false })]);
     const tabs = c.tabs.filter(t => t !== 'backup');
     if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); }
+    if (tabs.indexOf('invoice') >= 0 && LAST_INV !== todayIso_()) { try { await sb.rpc('app_sync_invoice'); } catch (e) { /* abaikan */ } LAST_INV = todayIso_(); } // invoice EPI bulanan
     if (tabs.indexOf('slip') >= 0 && LAST_SLIP !== todayIso_()) { try { await sb.rpc('app_sync_slip'); } catch (e) { /* abaikan */ } LAST_SLIP = todayIso_(); } // slip bulan lalu + bulan ini ikut timesheet // Rekap Harian hari ini ikut terisi dari CCF
     const keys = Object.keys(TBL).filter(k => tabs.indexOf(k) >= 0 || k === 'clients');
     const res = await Promise.all(keys.map(k => read_(k).then(rows => [k, rows])));
