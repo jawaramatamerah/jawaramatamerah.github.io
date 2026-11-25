@@ -530,7 +530,15 @@ async function syncRosterFromCcf_() {
     }
   } catch (e) { /* abaikan */ }
 }
-async function syncDaily_() { try { await sb.rpc('app_sync_daily'); } catch (e) { /* abaikan: sinkron berikutnya akan menyusul */ } }
+// Rantai real time: Rekap Harian (timesheet) -> Slip Gaji. Bila patch_realtime.sql belum dipasang, jatuh ke sinkron Rekap Harian saja.
+async function syncDaily_() {
+  try { const r = await sb.rpc('app_sync_chain'); if (r.error) await sb.rpc('app_sync_daily'); }
+  catch (e) { /* abaikan: sinkron berikutnya akan menyusul */ }
+}
+async function syncSlipOnly_() {
+  try { await sb.rpc('app_sync_chain', { p_daily: false }); }
+  catch (e) { /* abaikan: sinkron berikutnya akan menyusul */ }
+}
 async function syncUnitBast_(client, plat) {
   try {
     const pn = v => String(v == null ? '' : v).toLowerCase().replace(/\s+/g, ''); if (!pn(plat)) return;
@@ -700,6 +708,7 @@ const API = {
     }
     if (k === 'ccf') await syncRosterFromCcf_();
     if (k === 'ccf' || k === 'drivers') await syncDaily_();
+    else if (k === 'dailyLogs') await syncSlipOnly_();
     if (k === 'bast') await syncUnitBast_(o.client, o.plat);
     return { success: true, id: outId, message: old ? 'Perubahan disimpan.' : 'Data baru ditambahkan.' };
   },
@@ -724,6 +733,7 @@ const API = {
     if (k === 'dailyLogs' && String(id).indexOf('LOGA-') === 0) { try { await sb.from('log_skip').upsert({ id_log: id }, { onConflict: 'id_log', ignoreDuplicates: true }); } catch (e) { /* abaikan */ } }
     if (k === 'ccf') await syncRosterFromCcf_();
     if (k === 'ccf' || k === 'drivers') await syncDaily_();
+    else if (k === 'dailyLogs') await syncSlipOnly_();
     if (k === 'bast') await syncUnitBast_(old.client, old.plat);
     return { success: true, message: 'Data berhasil dihapus.' };
   },
