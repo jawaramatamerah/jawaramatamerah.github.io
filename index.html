@@ -904,10 +904,20 @@ const API = {
   async sendBossReport() { return NA('Laporan WhatsApp'); },
   async sendDailyNow() { return NA('Laporan harian WhatsApp'); },
   async simpanHarianNow() { return NA('Simpan data harian ke Drive'); },
-  async backupNow() { return NA('Backup manual'); },
-  async backupStatus() { return { last: '', status: '', trigger: false, log: [], lampiran: 0, mirrored: 0, folderUrl: '', email: '', local: '', lastFail: '' }; },
-  async downloadBackupXlsx() { throw new Error('Unduh backup belum tersedia di versi Supabase.'); },
-  async buatSlipDariTimesheet(client, ym) {
+  async backupNow() {
+    const r = await callFn_('backup-data', { mode: 'run' });
+    return { success: r.success !== false, message: r.message || 'Backup selesai.' };
+  },
+  async backupStatus() {
+    const r = await sb.rpc('app_backup_status');
+    if (r.error) throw new Error(r.error.message);
+    return r.data;
+  },
+  async downloadBackupXlsx() {
+    const r = await callFn_('backup-data', { mode: 'download' });
+    if (!r.success) throw new Error(r.message || 'Unduh backup gagal.');
+    return { name: r.name, mime: r.mime, b64: r.b64 };
+  },  async buatSlipDariTimesheet(client, ym) {
     const c = await me_(); if (c.tabs.indexOf('slip') < 0) throw denied();
     if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) throw new Error('Pilih satu bulan penuh untuk membuat slip dari timesheet.');
     const r = await sb.rpc('app_sync_slip', { p_ym: ym, p_client: client || 'ALL' });
