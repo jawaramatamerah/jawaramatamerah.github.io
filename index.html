@@ -627,6 +627,18 @@ const detailTxt = (d, aksi) => {
 };
 
 /* ===================== API (nama sama dengan fungsi di Code.gs) ===================== */
+
+async function callFn_(name, body) {
+  const r = await sb.functions.invoke(name, { body: body });
+  if (r.error) {
+    let m = '';
+    try { const j = r.error.context && await r.error.context.json(); m = j && j.message || ''; } catch (e) { /* abaikan */ }
+    if (/SESI_HABIS/.test(m)) throw new Error(m);
+    if (m) return { success: false, message: m };
+    return { success: false, message: /not found|404/i.test(String(r.error.message)) ? 'Fungsi pengiriman email belum dipasang di Supabase.' : 'Gagal menghubungi fungsi pengiriman email: ' + (r.error.message || r.error) };
+  }
+  return r.data || { success: false, message: 'Tidak ada jawaban dari server.' };
+}
 let LAST_SYNC = '', LAST_SLIP = '', LAST_INV = '';
 const API = {
   async login(email, pw) {
@@ -877,8 +889,18 @@ const API = {
   },
 
   // Fitur yang masih di Google Apps Script (tahap berikutnya: Edge Function dan jadwal otomatis)
-  async sendSlipEmail() { return NA('Pengiriman slip lewat email'); },
-  async sendSlipBatch(ids) { return { success: true, results: (ids || []).map(id => ({ id: id, nama: '?', status: 'gagal', msg: 'Pengiriman email belum tersedia di versi Supabase.' })) }; },
+  async sendSlipEmail(id, force) {
+    const r = await callFn_('kirim-slip', { ids: [id], force: !!force });
+    if (r.success === false) return { success: false, message: r.message };
+    const x = (r.results || [])[0] || {};
+    if (x.dup) return { success: false, dup: true, message: x.msg };
+    return { success: x.status === 'terkirim', message: x.msg || 'Tidak ada hasil.' };
+  },
+  async sendSlipBatch(ids) {
+    const r = await callFn_('kirim-slip', { ids: ids || [], force: false });
+    if (r.success === false) return { success: true, results: (ids || []).map(id => ({ id: id, nama: '?', status: 'gagal', msg: r.message })) };
+    return { success: true, results: (r.results || []).map(x => ({ id: x.id, nama: x.nama, status: x.status, msg: x.msg })) };
+  },
   async sendBossReport() { return NA('Laporan WhatsApp'); },
   async sendDailyNow() { return NA('Laporan harian WhatsApp'); },
   async simpanHarianNow() { return NA('Simpan data harian ke Drive'); },
