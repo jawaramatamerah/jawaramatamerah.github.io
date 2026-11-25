@@ -3892,7 +3892,7 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
   const sb = g('sidebar'), ov = g('sbOverlay');
   const openDrawer = () => { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); document.body.style.overflow = 'hidden'; };
   const closeDrawer = () => { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); document.body.style.overflow = ''; };
-  g('btnMenu').onclick = openDrawer; g('btnMenuX').onclick = closeDrawer; ov.onclick = closeDrawer;
+  g('btnMenu').onclick = () => (sb.classList.contains('-translate-x-full') ? openDrawer() : closeDrawer()); g('btnMenuX').onclick = closeDrawer; ov.onclick = closeDrawer;
   sb.addEventListener('click', e => { if (e.target.closest('[data-k],[data-add]') && !desk()) closeDrawer(); });
   window.addEventListener('resize', () => { if (desk()) closeDrawer(); });
   // ciutkan sidebar (desktop)
