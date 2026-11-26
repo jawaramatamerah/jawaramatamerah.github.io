@@ -1696,16 +1696,17 @@ function renderChrome() {
 
 const PNBTN = r => cur === 'penawaran' ? `<button data-a="pnpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="pnpdf" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button>` : '';
 const POBTN = r => cur === 'po' && /untuk (Client|Supplier)/.test(r.jenis || '') ? `<button data-a="popv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="popdf" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PO</button>` : '';
-const BASTBTN = r => POBTN(r) + PNBTN(r) + (cur === 'bast' ? `<button data-a="bastpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="bastpdf" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button>` : '');
+const ATTPV = r => (cur === 'proforma' || (cur === 'po' && !/untuk (Client|Supplier)/.test(r.jenis || ''))) ? `<button data-a="attpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button>` : '';
+const BASTBTN = r => ATTPV(r) + POBTN(r) + PNBTN(r) + (cur === 'bast' ? `<button data-a="bastpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="bastpdf" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button>` : '');
 const actions = r => !CAN()
-  ? (cur === 'invoice' ? `<button data-a="inv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button><button data-a="invx" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Excel</button>` : '') + (DETAIL_TABS.includes(cur) ? `<button data-a="det" data-id="${esc(r.id)}" class="px-1.5 text-slate-300 hover:text-white">Detail</button>` : '') + (ATT_TABS.includes(cur) ? `<button data-a="att" data-id="${esc(r.id)}" class="px-1.5 text-violet-300 hover:text-violet-200">Lampiran${attOf(cur, r.id).length ? ' (' + attOf(cur, r.id).length + ')' : ''}</button>` : '') + (cur === 'slip' ? `<button data-a="pv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Preview PDF</button>` : '') + BASTBTN(r)
+  ? (cur === 'invoice' ? `<button data-a="invpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="inv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button><button data-a="invx" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Excel</button>` : '') + (DETAIL_TABS.includes(cur) ? `<button data-a="det" data-id="${esc(r.id)}" class="px-1.5 text-slate-300 hover:text-white">Detail</button>` : '') + (ATT_TABS.includes(cur) ? `<button data-a="att" data-id="${esc(r.id)}" class="px-1.5 text-violet-300 hover:text-violet-200">Lampiran${attOf(cur, r.id).length ? ' (' + attOf(cur, r.id).length + ')' : ''}</button>` : '') + (cur === 'slip' ? `<button data-a="pv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Preview PDF</button>` : '') + BASTBTN(r)
   : 
   (DETAIL_TABS.includes(cur) ? `<button data-a="det" data-id="${esc(r.id)}" class="px-1.5 text-slate-300 hover:text-white">Detail</button>` : '') +
   `<button data-a="edit" data-id="${esc(r.id)}" class="px-1.5 text-blue-300 hover:text-blue-200">Ubah</button>` +
   (CANDELROW() ? `<button data-a="del" data-id="${esc(r.id)}" class="px-1.5 text-red-300 hover:text-red-200">Hapus</button>` : '') +
   (cur === 'units' ? `<button data-a="tog" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Ganti status</button>` : '') +
   (ATT_TABS.includes(cur) ? `<button data-a="att" data-id="${esc(r.id)}" class="px-1.5 text-violet-300 hover:text-violet-200">Lampiran${attOf(cur, r.id).length ? ' (' + attOf(cur, r.id).length + ')' : ''}</button>` : '') +
-  (cur === 'invoice' ? `<button data-a="inv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button><button data-a="invx" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Excel</button>` : '') +
+  (cur === 'invoice' ? `<button data-a="invpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="inv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button><button data-a="invx" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Excel</button>` : '') +
   (cur === 'slip' && CANPREV() ? `<button data-a="pv" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Preview PDF</button>` : '') + BASTBTN(r);
 
 function render() {
@@ -2921,6 +2922,26 @@ function invData(r) {
     kanan: [['No invoice', r.noInvoice], ['Tanggal', fdl(r.tglTagihan)], ['No. SPK', pick('noSpk')], ['Tanggal SPK', fdl(pick('tglSpk'))], ['', ''], ['No', r.noProforma || ''], ['Tanggal', fdl(r.tglProforma)]],
     file: ('Invoice_' + shortCl(r.client) + '_' + String(r.noInvoice || '').replace(/[^\w\-]+/g, '-') + '_' + today()).replace(/[^\w\-]+/g, '_') };
 }
+async function invPreview(r) {
+  if (!r) return;
+  toast('Menyiapkan pratinjau invoice...');
+  window.__INV_PV = (blob, name) => {
+    const url = URL.createObjectURL(blob);
+    if (BPV && BPV.url) URL.revokeObjectURL(BPV.url);
+    BPV = { r, blob, url, name, generik: 'Invoice' };
+    $('bpvT').textContent = 'Pratinjau Invoice (PDF)';
+    $('bpvInfo').textContent = 'Invoice ' + (r.noInvoice || '') + ' | ' + (r.client || '');
+    $('bpvFrame').src = url; $('bpv').classList.remove('hidden'); $('toast').classList.add('hidden');
+  };
+  try { await printInvoice(r); } finally { window.__INV_PV = null; }
+}
+// Pratinjau dokumen yang diunggah di Lampiran (Proforma, PO dari Client): buka jendela Lampiran dan tampilkan file pertama
+function attQuickPreview(row) {
+  if (!row) return;
+  openAtt(row);
+  const first = document.querySelector('#attList [data-aa="view"]');
+  if (first) first.click(); else toast('Belum ada file lampiran untuk dipratinjau. Unggah dokumennya di jendela Lampiran.', true);
+}
 async function printInvoice(r) {
   if (!r) return;
   try {
@@ -2964,6 +2985,7 @@ async function printInvoice(r) {
     });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text('Hormat Kami', 440, y + 6, { align: 'center' });
     doc.setFont('helvetica', 'bold'); doc.text(lat(String(D.ttd).toUpperCase()), 440, y + 68, { align: 'center' }); doc.text('DIREKTUR', 440, y + 80, { align: 'center' });
+    if (window.__INV_PV) { const cb = window.__INV_PV; window.__INV_PV = null; return cb(doc.output('blob'), D.file + '.pdf'); }
     saveBlob(doc.output('blob'), D.file + '.pdf');
     toast('Invoice ' + r.noInvoice + ' selesai dicetak.');
   } catch (e) { toast(e.message || String(e), true); }
@@ -3551,6 +3573,8 @@ async function act(a, id) {
   if (a === 'popdf') return poPrint(row);
   if (a === 'bastpv') return bastPreview(row);
   if (a === 'bastpdf') return bastPrint(row);
+  if (a === 'invpv') return invPreview(row);
+  if (a === 'attpv') return attQuickPreview(row);
   if (a === 'inv') return printInvoice(row);
   if (a === 'invx') return invoiceXlsx(row);
   if (a === 'att') return openAtt(row);
