@@ -877,7 +877,8 @@ const API = {
 
   async getAllData() {
     const [c, cfg, att] = await Promise.all([me_(), settings_(), sb.from('lampiran').select('*').order('ts', { ascending: false })]);
-    const tabs = c.tabs;
+    const tabs = c.tabs.slice();
+    if (['invoice', 'pengeluaran', 'slip'].every(k => tabs.indexOf(k) >= 0)) tabs.push('rekaplaba'); // menu hitungan (tanpa tabel sendiri): butuh akses invoice, pengeluaran, dan slip
     if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); }
     if (tabs.indexOf('invoice') >= 0 && LAST_INV !== todayIso_()) { try { await sb.rpc('app_sync_invoice'); } catch (e) { /* abaikan */ } LAST_INV = todayIso_(); } // invoice EPI bulanan
     if (tabs.indexOf('slip') >= 0 && LAST_SLIP !== todayIso_()) { try { await sb.rpc('app_sync_slip'); } catch (e) { /* abaikan */ } LAST_SLIP = todayIso_(); } // slip bulan lalu + bulan ini ikut timesheet // Rekap Harian hari ini ikut terisi dari CCF
@@ -1317,6 +1318,7 @@ const TABS = [
   { k:'pemasukan', l:'Input Pemasukan', t:'Rekap Pemasukan', i:'dollar', ph:'Cari no. transaksi, sumber, keterangan...', date:'tanggal', xf:['kategori','metode','periode','status'],
     cols:[['noTrx','No. Transaksi'],['tanggal','Tanggal',r=>fd(r.tanggal)],['client','Client',r=>esc(r.client)||'-'],['kategori','Kategori',r=>badge(r.kategori||'-','bg-emerald-600/20 text-emerald-300')],['sumber','Sumber'],['uraian','Keterangan'],['nominal','Nominal',r=>`<b class="${r.status==='Dibatalkan'?'text-slate-400 line-through':'text-emerald-300'}">${rp(r.nominal)}</b>`],['metode','Metode'],['rekening','Rekening / Kas'],['noRef','No. Ref'],['status','Status',r=>badge(r.status||'Valid',r.status==='Dibatalkan'?'bg-red-600/30 text-red-300':'bg-emerald-600/30 text-emerald-300')]],
     form:[['tanggal','Tanggal','date',1],['sumber','Sumber pemasukan','text',1],['kategori','Kategori','kat',1],['client','Client (opsional)','clientopt'],['uraian','Keterangan','textarea'],['nominal','Nominal (Rp)','number',1],['metode','Metode pembayaran','select:Transfer Bank|Tunai|Cek / Giro|E-Wallet|Lainnya'],['rekening','Rekening / kas tujuan'],['noRef','Nomor referensi (opsional)'],['status','Status','select:Valid|Dibatalkan']] },
+  { k:'rekaplaba', l:'Rekap Keuntungan', t:'Rekapitulasi Keuntungan Per Client', i:'dollar', rng:1, dlabel:'Periode', ph:'Cari client...' },
   { k:'rekapgaji', l:'Rekap Gaji', t:'Rekapitulasi Gaji Personel Per Client', i:'wallet', rng:1, xf:['periode'], dlabel:'Periode gaji', ph:'Cari nama, posisi, client...' },
   { k:'pengeluaran', l:'Pengeluaran', t:'Tabel Pengeluaran Biaya Operasional', i:'receipt', r:1, ph:'Cari kategori, uraian, plat...', date:'tanggal',
     cols:[['client','Client'],['tanggal','Tanggal',r=>fd(r.tanggal)],['kategori','Kategori',r=>badge(r.kategori||'-','bg-rose-600/20 text-rose-300')],['uraian','Uraian'],['plat','Plat'],['nominal','Nominal',r=>`<b class="text-rose-300">${rp(r.nominal)}</b>`],['keterangan','Keterangan']],
@@ -1621,7 +1623,7 @@ function renderChrome() {
   // Sidebar: satu navigasi, dikelompokkan (isi dari MENUS + menu sistem); hanya menu yang diizinkan peran
   const okKeys = visibleTabs().map(t => t.k);
   const addKeys = new Set(MENUS.flatMap(g => g[3].map(x => x[0])));
-  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).concat(name === 'Keuangan & SDM' ? ['rekapgaji'] : [])])
+  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).concat(name === 'Keuangan & SDM' ? ['rekapgaji', 'rekaplaba'] : [])])
     .concat([['Sistem', ['backup', 'pengaturan', 'users']]]);
   $('tabs').innerHTML = groups.map(([name, keys]) => {
     const rows = keys.filter(k => okKeys.includes(k)).map(k => {
@@ -1743,6 +1745,7 @@ function render() {
   if (cur === 'users') { $('count').textContent = ''; return renderUsers(); }
   if (cur === 'timesheet') return renderTimesheet();
   if (cur === 'rekapgaji') return renderRekapGaji();
+  if (cur === 'rekaplaba') return renderRekapLaba();
   const q = $('q').value.toLowerCase().trim(), cf = $('cf').value, a = $('d1').value, b = $('d2').value;
   const rows = (DB[cur] || []).filter(r =>
     (cf === 'ALL' || !('client' in r) || r.client === cf) &&
@@ -2371,6 +2374,43 @@ function renderTimesheet() {
     '<p class="px-4 pt-4 text-xs text-slate-400">Pratinjau ditarik otomatis dari Input Harian (termasuk baris otomatis dari CCF). Gunakan Export PDF / Excel untuk mencetak.</p>' + m.sections.map(sheet).join('');
 }
 
+
+/* ---------- Rekapitulasi Keuntungan Per Client ---------- */
+// Pendapatan = invoice (sebelum PPN), Beban = pengeluaran operasional (kecuali kategori Gaji) + beban gaji dari Slip (gaji kotor + BPJS perusahaan)
+const dppOf = r => Number(r.hargaSewa) > 0 ? Number(r.hargaSewa) : Math.round((Number(r.nilai) || 0) / (1 + (Number(r.ppn) > 0 ? Number(r.ppn) : 11) / 100));
+function rlModel() {
+  const cf = $('cf').value || 'ALL', a = $('d1').value, b = $('d2').value, q = $('q').value.toLowerCase().trim();
+  const S = (L, f) => L.reduce((t, r) => t + (Number(typeof f === 'function' ? f(r) : r[f]) || 0), 0);
+  const inv = (DB.invoice || []).filter(r => inRange(r.tglTagihan, a, b));
+  const exp = (DB.pengeluaran || []).filter(r => inRange(r.tanggal, a, b) && !/^gaji/i.test(r.kategori || ''));
+  const slp = (DB.slip || []).filter(r => inRange(slipYm(r), a, b));
+  const names = [...new Set([].concat(inv, exp, slp).map(r => r.client || '-'))].filter(n => (cf === 'ALL' || n === cf) && (!q || n.toLowerCase().includes(q))).sort();
+  const calc = (I, E, P) => {
+    const tagih = S(I, dppOf), lunas = S(I.filter(r => r.statusBayar === 'Sudah Dibayar'), dppOf), peng = S(E, 'nominal'), gaji = S(P, r => (Number(r.kotor) || 0) + bpjsOf(r));
+    const beban = peng + gaji, laba = tagih - beban;
+    return { tagih, lunas, peng, gaji, beban, laba, margin: tagih > 0 ? laba / tagih * 100 : null, kas: lunas - beban };
+  };
+  const by = (L, n) => L.filter(r => (r.client || '-') === n);
+  const rows = names.map(n => Object.assign({ client: n }, calc(by(inv, n), by(exp, n), by(slp, n))));
+  const sel = L => L.filter(r => names.includes(r.client || '-'));
+  return { rows, tot: calc(sel(inv), sel(exp), sel(slp)), nInv: sel(inv).length };
+}
+const rlPct = v => v == null ? '-' : v.toFixed(1).replace('.', ',') + '%';
+const RL_HEAD = ['Client', 'Pendapatan (Invoice)', 'Invoice Lunas', 'Pengeluaran', 'Beban Gaji', 'Total Beban', 'Keuntungan', 'Margin', 'Keuntungan Kas (Lunas)'];
+const rlRow = x => [x.client, rp(x.tagih), rp(x.lunas), rp(x.peng), rp(x.gaji), rp(x.beban), rp(x.laba), rlPct(x.margin), rp(x.kas)];
+const RL_NOTE = 'Pendapatan = nilai invoice sebelum PPN (menurut tanggal tagihan). Pengeluaran = menu Pengeluaran (kategori Gaji tidak dihitung karena gaji diambil dari Slip Gaji). Beban Gaji = gaji kotor + BPJS perusahaan dari Slip Gaji. Keuntungan = Pendapatan - Total Beban. Keuntungan Kas = Invoice Lunas - Total Beban.';
+function renderRekapLaba() {
+  const m = rlModel();
+  $('count').textContent = '(' + m.rows.length + ' client) - Total Keuntungan ' + rp(m.tot.laba);
+  VIEW_ROWS = [];
+  if (!m.rows.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-400">Belum ada invoice, pengeluaran, atau slip pada filter ini. Ubah periode atau client di atas.</p>'; return; }
+  const th = 'px-4 py-3 text-xs font-medium text-slate-400', R = ' text-right', tone = v => v < 0 ? ' text-red-300' : ' text-emerald-300';
+  const cells = (x, bold) => rlRow(x).map((v, i) => `<td class="px-4 ${bold ? 'py-3' : 'py-2.5'}${i > 0 ? R : ''}${i === 6 || i === 8 ? ' font-bold' + tone(i === 6 ? x.laba : x.kas) : ''}${i === 7 && x.margin != null ? tone(x.margin) : ''}">${esc(v)}</td>`).join('');
+  $('view').innerHTML = `<div class="p-4 space-y-3"><p class="text-sm font-bold text-amber-400">REKAPITULASI KEUNTUNGAN PER CLIENT</p><div class="overflow-x-auto"><table class="w-full text-left text-[13px]"><thead><tr class="border-b border-[#1f2437]">${RL_HEAD.map((h, i) => `<th class="${th}${i > 0 ? R : ''}">${h}</th>`).join('')}</tr></thead><tbody class="divide-y divide-[#1f2437]/50">` +
+    m.rows.map(x => `<tr class="hover:bg-white/[0.04] transition-colors">${cells(x)}</tr>`).join('') +
+    `<tr class="bg-red-950/40 font-bold">${cells(Object.assign({ client: 'TOTAL KESELURUHAN' }, m.tot), true)}</tr></tbody></table></div><p class="text-xs text-slate-400">${esc(RL_NOTE)}</p></div>`;
+}
+
 /* ---------- Rekapitulasi Gaji Per Client (dari Slip Gaji) ---------- */
 const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 const perLbl = r => { const ym = slipYm(r); return /^\d{4}-\d{2}$/.test(ym) && parseYm(r.periode) ? MON3[Number(ym.slice(5)) - 1] + ' ' + ym.slice(0, 4) : (r.periode || '-'); }; // "01/11/2026" dan "Nov 2026" sama-sama tampil "Nov 2026"
@@ -2507,6 +2547,12 @@ function exportData() {
     });
     const recap = rgRecap(m);
     return { title: t.t, info: info.join('  |  '), head: recap.head, rows: recap.rows, stamp, file: fileOf(), sections, recap: m.groups.length > 1 ? recap : null, landscape: true, rgm: m, rgs: sections };
+  }
+
+  if (cur === 'rekaplaba') {
+    const m = rlModel(), sub = (a || b) ? '_' + (a ? fd(a).replace(/\//g, '-') : 'awal') + '_sd_' + (b ? fd(b).replace(/\//g, '-') : 'sekarang') : '';
+    info.push('Periode: ' + periodTxt()); if (cfx && cfx !== 'ALL') info.push('Client: ' + cfx); info.push(RL_NOTE);
+    return { title: t.t, info: info.join('  |  '), head: RL_HEAD, rows: m.rows.map(rlRow).concat([rlRow(Object.assign({ client: 'TOTAL KESELURUHAN' }, m.tot))]), stamp, file: fileOf(sub), sections: null, recap: null, landscape: true };
   }
 
   let head, rows, sub = '';
