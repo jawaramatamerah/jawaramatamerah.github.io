@@ -1982,8 +1982,12 @@ function openForm(row) {
       if (keep && !list.includes(keep) && !sel.dataset.chg) list.push(keep); // data lama tetap tampil saat edit, sampai client diganti
       sel.innerHTML = '<option value=""></option>' + list.map(p => `<option ${p === keep ? 'selected' : ''}>${esc(p)}</option>`).join('');
     };
-    f.elements['client'].addEventListener('change', () => { f.elements['plat'].dataset.chg = '1'; setUnits(); });
-    setUnits();
+    const setNames = () => { // saran nama driver hanya dari client terpilih
+      const cl = f.elements['client'].value;
+      $('dl').innerHTML = [...new Set(DB.drivers.filter(d => d.client === cl).map(d => d.name).filter(Boolean))].map(n => `<option value="${esc(n)}"></option>`).join('');
+    };
+    f.elements['client'].addEventListener('change', () => { f.elements['plat'].dataset.chg = '1'; setUnits(); setNames(); });
+    setUnits(); setNames();
   }
   // CCF: driver dan unit mengikuti Master Data (per client); PTS-ID, Company, dan plat unit terisi otomatis
   if (cur === 'ccf') {
