@@ -2635,10 +2635,11 @@ const monthEnd = ym => { const [y, m] = ym.split('-').map(Number); return ym + '
 const monLbl = ym => BLN[+ym.slice(5) - 1] + ' ' + ym.slice(2, 4);
 function goTo(tab, xf, val) { if (!(DB.tabs || []).includes(tab)) return; if (xf) XFV[tab + ':' + xf] = val; cur = tab; render(); window.scrollTo(0, 0); }
 function barChart(labels, series, stacked, hide) {
-  const W = 560, H = 196, pl = 8, pr = 8, pt = 18, pb = 26, n = labels.length;
+  const W = 560, H = 196, pl = 8, pr = 8, pt = 18, n = labels.length;
   const tot = i => series.reduce((t, s) => t + Math.max(0, s.vals[i]), 0);
   const max = Math.max(1, ...labels.map((_, i) => stacked ? tot(i) : Math.max(0, ...series.map(s => s.vals[i]))));
   const min = stacked ? 0 : Math.min(0, ...series.flatMap(s => s.vals));
+  const pb = 26 + (min < 0 && !hide ? 16 : 0); // ruang ekstra di bawah supaya angka batang negatif tidak menimpa nama bulan
   const rng = max - min || 1, ph = H - pt - pb, y = v => pt + (max - v) / rng * ph, y0 = y(0);
   const gw = (W - pl - pr) / n, bw = Math.min(46, gw * 0.62 / (stacked ? 1 : series.length));
   let g = `<line x1="${pl}" x2="${W - pr}" y1="${y0}" y2="${y0}" class="bc-ax"/>`;
