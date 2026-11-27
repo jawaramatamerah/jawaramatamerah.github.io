@@ -1973,6 +1973,18 @@ function openForm(row) {
     f.elements['client'].addEventListener('change', upd);
     upd();
   }
+  // Rekap Harian: pilihan plat hanya unit milik client yang dipilih
+  if (cur === 'dailyLogs') {
+    const f = $('mf');
+    const setUnits = () => {
+      const cl = f.elements['client'].value, sel = f.elements['plat'], keep = sel.value;
+      const list = DB.units.filter(u => u.client === cl && u.status === 'Aktif').map(u => u.plat);
+      if (keep && !list.includes(keep) && !sel.dataset.chg) list.push(keep); // data lama tetap tampil saat edit, sampai client diganti
+      sel.innerHTML = '<option value=""></option>' + list.map(p => `<option ${p === keep ? 'selected' : ''}>${esc(p)}</option>`).join('');
+    };
+    f.elements['client'].addEventListener('change', () => { f.elements['plat'].dataset.chg = '1'; setUnits(); });
+    setUnits();
+  }
   // CCF: driver dan unit mengikuti Master Data (per client); PTS-ID, Company, dan plat unit terisi otomatis
   if (cur === 'ccf') {
     const f = $('mf');
