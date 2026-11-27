@@ -2078,7 +2078,7 @@ function shortAlamat(alamat) {
 }
 /* ---------- Peringatan Rekap Harian: data double (driver sama, tanggal sama) dan 1 unit dibawa orang berbeda pada shift yang sama ---------- */
 const normShift = v => /^m/i.test(String(v || '').trim()) ? 'malam' : /^s/i.test(String(v || '').trim()) ? 'siang' : '';
-const normPlat = v => String(v || '').toLowerCase().replace(/\s+/g, '');
+const normPlat = v => { const t = String(v || '').toLowerCase().replace(/\s+/g, ''); return /^[-._,\/\u2013\u2014]*$/.test(t) ? '' : t; }; // plat '-' atau '.' dianggap kosong (tanpa peringatan)
 let DL_CACHE = null;
 function dailyConf() {
   const L = DB.dailyLogs || [];
