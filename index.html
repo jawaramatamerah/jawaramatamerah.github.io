@@ -1095,7 +1095,7 @@ const API = {
         const old = must(await sb.from('daily_logs').select('*').eq('id', op.id).maybeSingle());
         if (!old) throw new Error('Baris Rekap Harian tidak ditemukan (mungkin sudah dihapus). Muat ulang halaman.');
         const wasAuto = String(old.id).indexOf('LOGA-') === 0, newId = wasAuto ? 'LOG-' + uid8() : old.id;
-        const row = toDb('dailyLogs', { client: old.client, tanggal: old.tanggal, plat, driver: old.driver, shift, keterangan: 'Papan penugasan' }, newId, false);
+        const row = toDb('dailyLogs', { client: op.client || old.client, tanggal: old.tanggal, plat, driver: old.driver, shift, keterangan: 'Papan penugasan' }, newId, false);
         if (wasAuto) { row.id = newId; await sb.from('log_skip').upsert({ id_log: old.id }, { onConflict: 'id_log', ignoreDuplicates: true }); }
         else delete row.id;
         const d = must(await sb.from('daily_logs').update(row).eq('id', old.id).select('id'));
@@ -2769,15 +2769,14 @@ function ppDiff() {
   affected.forEach(n => {
     const want = (by[n] ? by[n].cells : []).map(k => k.split('|')), name = by[n] ? by[n].name : (Object.values(base).find(x => normNama(x) === n) || n);
     const rows = dayRows.filter(r => normNama(r.driver) === n);
-    if (rows.some(r => r.client !== P.client)) { errs.push(name + ' sudah tercatat di client lain pada tanggal ini (' + shortCl(rows.find(r => r.client !== P.client).client) + ').'); return; }
     const used = new Set(), left = [];
     const keep = [];
     want.forEach(([pk, sh]) => { const r = rows.find(x => !used.has(x.id) && normPlat(x.plat) === pk && normShift(x.shift) === sh.toLowerCase()); if (r) { used.add(r.id); keep.push({ r, pk, sh }); } else left.push([pk, sh]); });
-    const spare = rows.filter(r => !used.has(r.id));
+    const spare = rows.filter(r => !used.has(r.id)).sort((x, y) => (x.client === P.client ? 0 : 1) - (y.client === P.client ? 0 : 1)); // baris client lain (driver pinjaman, mis. MMP) boleh dipindah ke client ini
     const multi = want.length > 1;
-    keep.forEach(({ r, pk, sh }) => { if (multi && String(r.id).indexOf('LOGA-') === 0) ops.push({ op: 'upd', id: r.id, plat: P.labels[pk] || pk, shift: sh }); }); // jadikan manual agar sinkron CCF tidak menghapusnya
-    left.forEach(([pk, sh]) => { const r = spare.shift(); const plat = P.labels[pk] || pk; if (r) ops.push({ op: 'upd', id: r.id, plat, shift: sh }); else ops.push({ op: 'ins', driver: name, plat, shift: sh }); });
-    spare.forEach((r, i) => { if (want.length || i > 0) ops.push({ op: 'del', id: r.id }); else ops.push({ op: 'upd', id: r.id, plat: '', shift: r.shift || '' }); });
+    keep.forEach(({ r, pk, sh }) => { if ((multi && String(r.id).indexOf('LOGA-') === 0) || r.client !== P.client) ops.push({ op: 'upd', id: r.id, plat: P.labels[pk] || pk, shift: sh, client: P.client }); }); // jadikan manual agar sinkron CCF tidak menghapusnya
+    left.forEach(([pk, sh]) => { const r = spare.shift(); const plat = P.labels[pk] || pk; if (r) ops.push({ op: 'upd', id: r.id, plat, shift: sh, client: P.client }); else ops.push({ op: 'ins', driver: name, plat, shift: sh }); });
+    spare.filter(r => r.client === P.client).forEach((r, i) => { if (want.length || i > 0) ops.push({ op: 'del', id: r.id }); else ops.push({ op: 'upd', id: r.id, plat: '', shift: r.shift || '' }); });
   });
   return { ops, errs: [...new Set(errs)], changed };
 }
@@ -2786,13 +2785,20 @@ function renderPapan() {
   const P = PAPAN, cls = ppClients();
   if (!cls.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-400">Belum ada Master Unit berstatus Aktif. Isi Master Unit dulu, lalu buka papan ini lagi.</p>'; return; }
   const M = ppBuild(), D = ppDiff(), dr = P.draft, can = CAN();
-  const drivers = [...new Set((DB.drivers || []).filter(d => d.client === P.client).map(d => d.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const nm = x => [...new Set(x.map(d => d.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const drivers = nm((DB.drivers || []).filter(d => d.client === P.client));
+  // GDAP: driver MMP kadang membawa unit GDAP, jadi namanya ikut tersedia (kelompok sendiri); sisa driver client lain di kelompok terakhir
+  const gd = /GDAP|greatwall/i.test(P.client), ownSet = new Set(drivers.map(normNama));
+  const lend = gd ? nm((DB.drivers || []).filter(d => d.client !== P.client && /\bMMP\b/i.test(d.client) && !ownSet.has(normNama(d.name)))) : [];
+  const lendSet = new Set(lend.map(normNama));
+  const other = gd ? nm((DB.drivers || []).filter(d => d.client !== P.client && !ownSet.has(normNama(d.name)) && !lendSet.has(normNama(d.name)))) : [];
   const cntBy = {}; Object.keys(dr).forEach(k => { if (dr[k]) (cntBy[normNama(dr[k])] = cntBy[normNama(dr[k])] || []).push(k); });
   const lbl = k => { const [pk, sh] = k.split('|'); return (P.labels[pk] || pk) + ' (' + sh.toLowerCase() + ')'; };
   const sel = (pk, sh) => {
-    const k = pk + '|' + sh, v = dr[k] || '', ch = (M.base[k] || '') !== v, names = drivers.includes(v) || !v ? drivers : drivers.concat([v]);
+    const k = pk + '|' + sh, v = dr[k] || '', ch = (M.base[k] || '') !== v, known = new Set(drivers.concat(lend, other).map(normNama)), extraV = v && !known.has(normNama(v)) ? [v] : [];
+    const opt = n => `<option value="${esc(n)}" ${normNama(n) === normNama(v) ? 'selected' : ''}>${esc(n)}</option>`;
     const dup = v ? cntBy[normNama(v)].filter(x => x !== k && x.split('|')[0] !== pk) : [];
-    return `<div><label class="text-[11px] text-slate-400 md:hidden">Shift ${sh.toLowerCase()}</label><select data-pp="${esc(k)}" ${can ? '' : 'disabled'} class="w-full bg-[#0b0e1a] border ${dup.length ? 'border-amber-400' : ch ? 'border-sky-400' : 'border-[#2b3150]'} rounded-lg p-2 text-sm"><option value="">- kosong -</option>${names.map(n => `<option value="${esc(n)}" ${normNama(n) === normNama(v) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${dup.length ? `<p class="text-[11px] text-amber-300 mt-1">&#9888; ${esc(v)} juga memegang ${esc(dup.map(lbl).join(', '))} (satu driver hanya satu unit)</p>` : ''}</div>`;
+    return `<div><label class="text-[11px] text-slate-400 md:hidden">Shift ${sh.toLowerCase()}</label><select data-pp="${esc(k)}" ${can ? '' : 'disabled'} class="w-full bg-[#0b0e1a] border ${dup.length ? 'border-amber-400' : ch ? 'border-sky-400' : 'border-[#2b3150]'} rounded-lg p-2 text-sm"><option value="">- kosong -</option>${drivers.concat(extraV).map(opt).join('')}${lend.length ? `<optgroup label="Driver MMP">${lend.map(opt).join('')}</optgroup>` : ''}${other.length ? `<optgroup label="Driver client lain">${other.map(opt).join('')}</optgroup>` : ''}</select>${dup.length ? `<p class="text-[11px] text-amber-300 mt-1">&#9888; ${esc(v)} juga memegang ${esc(dup.map(lbl).join(', '))} (satu driver hanya satu unit)</p>` : ''}</div>`;
   };
   const unitRow = (pk, plat, note) => `<div class="bcard !p-3 grid gap-2 md:grid-cols-[minmax(150px,1fr)_1fr_1fr] md:items-start"><div class="font-bold pt-1.5">${esc(plat)}${note ? `<span class="block text-[11px] font-normal text-slate-400">${esc(note)}</span>` : ''}</div>${sel(pk, 'Siang')}${sel(pk, 'Malam')}</div>`;
   const filled = sh => M.units.filter(u => dr[normPlat(u.plat) + '|' + sh]).length;
