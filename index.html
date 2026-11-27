@@ -1455,7 +1455,7 @@ const SET = [
 // k=kunci, l=label tab, t=judul tabel, i=ikon, r=hanya admin
 // cols: [field, label, renderHTML?]   form: [field, label, type, required]
 const TABS = [
-  { k:'beranda', l:'Beranda', t:'Ringkasan', i:'home' },
+  { k:'beranda', l:'Beranda', t:'Dashboard', i:'home' },
   { k:'dailyLogs', l:'Rekap Harian', t:'Tabel Rekap Harian Operasional Driver', i:'calendar', ph:'Cari Plat, Driver...', date:'tanggal', xf:['peringatan'],
     cols:[['client','Client'],['tanggal','Tanggal',r=>fd(r.tanggal)],['plat','Plat Kendaraan'],['driver','Nama Driver'],['shift','Shift'],['keterangan','Keterangan',r=>String(r.id).indexOf('LOGA-')===0?badge('Otomatis dari CCF','bg-sky-600/20 text-sky-300'):(esc(r.keterangan)||'-')],['warn','Peringatan',r=>(dailyConf().info[r.id]||[]).map(x=>`<div class="text-amber-300 text-xs min-w-[220px]">&#9888; ${esc(x.m)}</div>`).join('')]],
     form:[['client','Client','client',1],['tanggal','Tanggal','date',1],['plat','Plat kendaraan','unit',1],['driver','Nama driver','driver',1],['shift','Shift','select:|Siang|Malam'],['keterangan','Keterangan','textarea']] },
