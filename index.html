@@ -123,7 +123,108 @@
   .kpi-l { font-size: 12px; font-weight: 500; }
   .kpi-s { margin-top: 4px; }
   #kpiBody > div.grid ~ div section, #dashBox > div { border-radius: 22px; }
-  #alertBar { border-radius: 16px; background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.25); color: #fecaca; }
+  #alertBar:not(.hidden) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .alc { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid; transition: background .15s, transform .15s; text-align: left; }
+  .alc:hover { transform: translateY(-1px); }
+  .alc.warn { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.35); color: #fcd34d; }
+  .alc.warn:hover { background: rgba(245,158,11,.18); }
+  .alc.bad { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.40); color: #fca5a5; }
+  .alc.bad:hover { background: rgba(239,68,68,.20); }
+  .alc-dot { width: 7px; height: 7px; border-radius: 9999px; background: currentColor; flex: none; }
+  .alc.bad .alc-dot { box-shadow: 0 0 0 3px rgba(239,68,68,.25); }
+  .alc-x { width: 34px; height: 34px; border-radius: 9999px; color: #94a3b8; font-size: 18px; line-height: 1; }
+  .alc-x:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .ops-h { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 600; color: #cbd5e1; background: var(--glass); border: 1px solid var(--edge); }
+  .ops-h:hover { color: #fff; border-color: rgba(248,113,113,.5); }
+  .ops-h.warn { color: #fcd34d; border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.08); }
+  .ops-hint { font-weight: 400; font-size: 11px; color: #64748b; margin-left: 4px; }
+  @media (max-width: 640px) { .ops-hint { display: none; } }
+  /* filter: satu baris di layar lebar */
+  @media (min-width: 1200px) {
+    #filters { flex-wrap: nowrap; }
+    #filters .fbox:first-child { flex: 1 1 220px; min-width: 180px; max-width: 300px; }
+    #filters select { flex: 0 1 auto; min-width: 120px; max-width: 200px; text-overflow: ellipsis; }
+    #dateWrap { flex: none; }
+  }
+  /* ===== Tahap b-f ===== */
+  :focus-visible { outline: 2px solid #f87171; outline-offset: 2px; border-radius: 8px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  /* beranda */
+  body[data-cur="beranda"] #kpiSec, body[data-cur="beranda"] #alertBar, body[data-cur="beranda"] #crumb, body[data-cur="beranda"] #opsBox, body[data-cur="beranda"] #dashBox { display: none !important; }
+  body[data-cur="beranda"] #view { background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; overflow: visible; max-height: none; }
+  .bkpi { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 16px; border-radius: 22px; background: var(--glass); border: 1px solid var(--edge); transition: transform .15s, border-color .15s, background .15s; min-height: 148px; }
+  .bkpi:hover { transform: translateY(-2px); border-color: rgba(248,113,113,.45); background: rgba(255,255,255,.06); }
+  .bk-l { font-size: 12px; color: #94a3b8; margin-top: 10px; }
+  .bk-v { font-size: 26px; line-height: 1.15; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .bk-s { font-size: 11.5px; color: #94a3b8; }
+  .bk-eye { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 9999px; color: #94a3b8; }
+  .bk-eye:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .bcard { padding: 18px; border-radius: 22px; background: var(--glass); border: 1px solid var(--edge); }
+  .bcard-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .bcard-h p { font-size: 14px; font-weight: 600; } .bcard-h span { font-size: 11px; color: #94a3b8; }
+  .bc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 9999px; margin: 0 4px 0 8px; }
+  .bc-l { fill: #94a3b8; font-size: 11px; } .bc-v { fill: #cbd5e1; font-size: 10.5px; } .bc-ax { stroke: #2b3150; }
+  .bc-hide { font-size: 12px; color: #94a3b8; padding: 28px 8px; text-align: center; }
+  .bc-track { height: 8px; border-radius: 9999px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .bc-pos, .bc-neg { height: 100%; border-radius: 9999px; } .bc-pos { background: linear-gradient(90deg,#10b981,#34d399); } .bc-neg { background: linear-gradient(90deg,#ef4444,#f87171); }
+  .bc-link { font-size: 12px; color: #fca5a5; } .bc-link:hover { text-decoration: underline; }
+  .todo { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; min-height: 44px; border-radius: 14px; font-size: 13px; border: 1px solid; transition: background .15s; }
+  .todo.warn { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3); color: #fcd34d; } .todo.bad { background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.35); color: #fca5a5; }
+  .todo:hover { background: rgba(255,255,255,.07); } .todo-go { font-size: 12px; opacity: .8; white-space: nowrap; }
+  /* navigasi */
+  #crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+  #crumb:empty { display: none; }
+  .crumb-l:hover { color: #fff; text-decoration: underline; } .crumb-back { min-height: 36px; padding: 0 12px 0 6px; border-radius: 9999px; color: #fca5a5; font-weight: 600; }
+  .nav-gh[data-gh] { display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-radius: 10px; }
+  .nav-gh[data-gh]:hover { color: #fff; } .nav-gh .gch { width: 14px; height: 14px; transition: transform .15s; }
+  .grp.col .gch { transform: rotate(-90deg); }
+  body:not(.sb-collapsed) .grp.col .nav-row:not(.on) { display: none; }
+  #bnav { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 44; display: none; align-items: stretch; justify-content: space-around; gap: 2px; padding: 6px; border-radius: 26px; background: rgba(20,24,40,.92); backdrop-filter: blur(14px); border: 1px solid var(--edge); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+  #bnav button { flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 20px; font-size: 10.5px; color: #94a3b8; }
+  #bnav button.on { color: #fff; background: linear-gradient(135deg, rgba(239,68,68,.35), rgba(244,63,94,.2)); }
+  #bnav button.hidden { display: none; }
+  @media (max-width: 767px) { #bnav { display: flex; } body { padding-bottom: 86px; } #toast.toast { bottom: 92px; } }
+  #pal { position: fixed; inset: 0; z-index: 80; background: rgba(2,6,23,.7); backdrop-filter: blur(4px); display: flex; align-items: flex-start; justify-content: center; padding: 10vh 12px 12px; }
+  #pal.hidden { display: none; }
+  #palBox { width: 100%; max-width: 560px; border-radius: 22px; background: #141828; border: 1px solid var(--edge); box-shadow: 0 24px 60px rgba(0,0,0,.6); overflow: hidden; }
+  #palq { width: 100%; padding: 16px 18px; background: transparent; border-bottom: 1px solid var(--edge); outline: none; font-size: 15px; }
+  #pall { max-height: 52vh; overflow-y: auto; padding: 6px; }
+  .pal-g { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: #64748b; padding: 10px 12px 4px; }
+  .pal-i { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 9px 12px; min-height: 44px; border-radius: 12px; font-size: 13px; }
+  .pal-i.on, .pal-i:hover { background: rgba(239,68,68,.16); }
+  .kbd { font-size: 10px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--edge); color: #94a3b8; }
+  /* tabel */
+  #view td, #view th { font-variant-numeric: tabular-nums; }
+  @media (min-width: 768px) {
+    body[data-tbl] #view { max-height: calc(100dvh - 110px); }
+    #view thead th { position: sticky; top: 0; z-index: 3; background: #1a1f33; box-shadow: 0 1px 0 var(--edge); }
+  }
+  .ico-btn { position: relative; width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 12px; padding: 0 !important; transition: background .15s; }
+  .ico-btn:hover { background: rgba(255,255,255,.1); }
+  .ico-n { position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; background: #7c3aed; color: #fff; font-size: 10px; display: grid; place-items: center; }
+  .sk { border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.09), rgba(255,255,255,.04)); background-size: 200% 100%; animation: skm 1.2s infinite linear; height: 38px; }
+  @keyframes skm { to { background-position: -200% 0; } }
+  /* form */
+  #mf > div:first-child { position: sticky; top: -20px; z-index: 5; background: #141828; margin: -20px -20px 0; padding: 16px 20px 12px; }
+  #mf > div:last-child { position: sticky; bottom: -20px; z-index: 5; background: #141828; margin: 0 -20px -20px; padding: 12px 20px 16px; }
+  .fsec { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: #94a3b8; font-weight: 600; margin: 14px 0 8px; display: flex; align-items: center; gap: 10px; }
+  .fsec::after { content: ''; flex: 1; height: 1px; background: var(--edge); }
+  .fsec:first-child { margin-top: 0; }
+  .ferr { font-size: 11.5px; color: #fca5a5; margin-top: 4px; }
+  .ferr-in { border-color: rgba(239,68,68,.8) !important; }
+  #mErr { display: none; border-radius: 12px; padding: 10px 14px; font-size: 12.5px; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); color: #fca5a5; }
+  @media (max-width: 640px) { #modal { align-items: flex-end !important; padding: 0 !important; } #mf { max-width: none !important; max-height: 94dvh !important; border-radius: 24px 24px 0 0 !important; } }
+  /* toast */
+  #toast.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 520px); padding: 11px 18px; border-radius: 9999px; font-size: 13px; font-weight: 500; color: #fff; backdrop-filter: blur(10px); box-shadow: 0 12px 30px rgba(0,0,0,.4); animation: tin .25s ease-out; }
+  #toast.toast.ok { background: rgba(5,150,105,.92); } #toast.toast.err { background: rgba(220,38,38,.94); }
+  #toast.toast.hidden { display: none; }
+  .toast-ic { width: 20px; height: 20px; border-radius: 9999px; background: rgba(255,255,255,.22); display: grid; place-items: center; font-size: 12px; flex: none; }
+  @keyframes tin { from { opacity: 0; transform: translate(-50%, 10px); } }
+  /* HP: target sentuh 44px */
+  @media (max-width: 767px) { .icon-btn, #filters select, #btnPeriode, #view .more + *, .nav-item { min-height: 44px; } #view button[data-a], #view [data-more] { min-height: 40px; padding-left: 10px; padding-right: 10px; } }
+  /* tema terang */
+  html.light { filter: invert(.93) hue-rotate(180deg); background: #0b0e1a; }
+  html.light img, html.light video, html.light canvas, html.light iframe, html.light [data-logo] { filter: invert(1) hue-rotate(180deg); }
   /* judul + tabel */
   #ttl { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
   #view { border-radius: 22px; background: rgba(20,24,40,.7); border: 1px solid var(--edge); }
@@ -152,6 +253,8 @@
   </div>
   <h1 id="hdrTitle" class="hidden"></h1>
   <div class="flex items-center justify-end gap-2 sm:gap-4 min-w-0">
+    <button type="button" data-pal class="icon-btn hidden sm:inline-flex" title="Cari cepat (Ctrl+K)" aria-label="Cari cepat"><svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button type="button" id="btnTheme" class="icon-btn hidden sm:inline-flex" title="Ganti tema" aria-label="Ganti tema"></button>
     <div class="hidden sm:flex items-center gap-1.5 text-slate-300 whitespace-nowrap">
       <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
       <span id="clock" class="font-mono text-xs tabular-nums"></span>
@@ -166,6 +269,7 @@
         <div class="px-3 py-2.5"><span id="userInfo" class="block text-xs text-slate-300 break-words"></span></div>
         <div class="my-1 border-t border-[#1f2437]"></div>
         <button type="button" id="btnSw" class="hidden pm-item text-amber-300">Ganti Akun</button>
+        <button type="button" id="btnTheme2" class="pm-item sm:hidden">Ganti tema (gelap / terang)</button>
         <button type="button" id="btnPw" class="pm-item">Ganti Password</button>
         <button type="button" id="btnInstall" class="hidden pm-item text-emerald-300">Pasang Aplikasi</button>
         <div class="my-1 border-t border-[#1f2437]"></div>
@@ -195,7 +299,7 @@
 
 <main class="px-4 sm:px-6 lg:px-8 py-5 space-y-4 max-w-[1600px] w-full mx-auto">
 
-  <div id="alertBar" class="hidden bg-red-950/50 text-red-200 rounded-lg px-4 py-2.5 text-xs"></div>
+  <div id="alertBar" class="hidden"></div>
 
   <!-- Ringkasan (bisa dilipat) -->
   <section id="kpiSec">
@@ -211,6 +315,7 @@
 
   <!-- Judul halaman, filter, aksi -->
   <section id="pageHead" class="space-y-3">
+    <nav id="crumb" aria-label="Posisi halaman"></nav>
     <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <h2 id="ttl" class="text-lg sm:text-xl font-semibold"></h2>
       <span id="count" class="text-xs text-slate-400 font-normal"></span>
@@ -307,7 +412,7 @@
   <div id="opsBox" class="hidden"></div>
 
   <div id="view" class="rounded-xl bg-[#141828] overflow-x-auto">
-    <p class="p-10 text-center text-slate-400">Memuat data...</p>
+    <div class="p-5 space-y-3"><div class="sk w-1/3"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk w-2/3"></div></div>
   </div>
 </main>
 </div>
@@ -322,6 +427,7 @@
       <button type="button" id="mx" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Tutup">&times;</button>
     </div>
     <div id="mb"></div>
+    <p id="mErr" role="alert"></p>
     <div class="flex justify-end gap-2 pt-3 border-t border-[#1f2437]">
       <button type="button" id="mc" class="px-4 py-2 bg-slate-800 rounded-lg">Batal</button>
       <button type="submit" id="ms" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 font-bold rounded-lg disabled:opacity-50">Simpan data</button>
@@ -421,6 +527,14 @@
     <p class="text-xs text-slate-400 text-center pt-1 border-t border-[#1f2437]">Created by <span class="font-semibold text-slate-200">Aji Pangestu</span></p>
   </form>
 </div>
+<nav id="bnav" aria-label="Menu utama">
+  <button type="button" data-k="beranda"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Beranda</button>
+  <button type="button" data-k="dailyLogs"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Harian</button>
+  <button type="button" data-k="invoice"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Invoice</button>
+  <button type="button" data-pal><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Cari</button>
+  <button type="button" data-menu-open><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menu</button>
+</nav>
+<div id="pal" class="hidden" role="dialog" aria-label="Pencarian cepat" aria-modal="true"><div id="palBox"><input id="palq" type="text" autocomplete="off" placeholder="Cari menu, driver, plat unit, atau nomor invoice..." aria-label="Cari"><div id="pall"></div><p class="px-4 py-2 text-[11px] text-slate-500 border-t border-[#2b3150]"><span class="kbd">↑</span> <span class="kbd">↓</span> pilih &nbsp; <span class="kbd">Enter</span> buka &nbsp; <span class="kbd">Esc</span> tutup</p></div></div>
 <div id="toast" class="hidden"></div>
 
 <script>
@@ -880,6 +994,7 @@ const API = {
   async getAllData() {
     const [c, cfg, att] = await Promise.all([me_(), settings_(), sb.from('lampiran').select('*').order('ts', { ascending: false })]);
     const tabs = c.tabs.slice();
+    if (tabs.indexOf('beranda') < 0) tabs.push('beranda'); // halaman Ringkasan tersedia untuk semua akun
     if (['invoice', 'pengeluaran', 'slip'].every(k => tabs.indexOf(k) >= 0)) tabs.push('rekaplaba'); // menu hitungan (tanpa tabel sendiri): butuh akses invoice, pengeluaran, dan slip
     if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); }
     if (tabs.indexOf('invoice') >= 0 && LAST_INV !== todayIso_()) { try { await sb.rpc('app_sync_invoice'); } catch (e) { /* abaikan */ } LAST_INV = todayIso_(); } // invoice EPI bulanan
@@ -1243,9 +1358,21 @@ const ICONS = {
 };
 const ic = (n, c) => `<svg class="${c || 'w-4 h-4'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n] || ''}</svg>`;
 
+Object.assign(ICONS, {
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+  moon: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  refresh: '<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/>',
+  printer: '<path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/>',
+  clip: '<path d="M21 11l-9 9a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+});
 const EMPTY_DB = () => ({ settings: { ALERT_DAYS: 30, ROSTER_ON_DAYS: 20, ROSTER_OFF_DAYS: 10 }, role: '', email: '', tabs: [], pendingPw: 0, clients: [], units: [], drivers: [], invoice: [], pengeluaran: [], po: [], penawaran: [], kontrak: [], pemasukan: [], kategori: [], backup: null });
 let DB = EMPTY_DB();
-let cur = 'dailyLogs';
+let cur = 'beranda';
 let VIEW_ROWS = [];
 // Angka keuangan di kartu dashboard disembunyikan; klik ikon mata untuk menampilkan (otomatis tersembunyi lagi setelah 30 detik)
 const SHOWN = {};
@@ -1253,8 +1380,9 @@ let SHOWN_T = null;
 function toggleSecret(k) {
   SHOWN[k] = !SHOWN[k];
   clearTimeout(SHOWN_T);
-  if (Object.values(SHOWN).some(Boolean)) SHOWN_T = setTimeout(() => { Object.keys(SHOWN).forEach(x => SHOWN[x] = false); renderChrome(); }, 30000);
-  renderChrome();
+  const rr = () => (cur === 'beranda' ? render() : renderChrome());
+  if (Object.values(SHOWN).some(Boolean)) SHOWN_T = setTimeout(() => { Object.keys(SHOWN).forEach(x => SHOWN[x] = false); rr(); }, 30000);
+  rr();
 }
 
 const isDemob = r => /^demob/i.test(String(r.tipe || '').trim());
@@ -1289,6 +1417,7 @@ const SET = [
 // k=kunci, l=label tab, t=judul tabel, i=ikon, r=hanya admin
 // cols: [field, label, renderHTML?]   form: [field, label, type, required]
 const TABS = [
+  { k:'beranda', l:'Beranda', t:'Ringkasan', i:'home' },
   { k:'dailyLogs', l:'Rekap Harian', t:'Tabel Rekap Harian Operasional Driver', i:'calendar', ph:'Cari Plat, Driver...', date:'tanggal', xf:['peringatan'],
     cols:[['client','Client'],['tanggal','Tanggal',r=>fd(r.tanggal)],['plat','Plat Kendaraan'],['driver','Nama Driver'],['shift','Shift'],['keterangan','Keterangan',r=>String(r.id).indexOf('LOGA-')===0?badge('Otomatis dari CCF','bg-sky-600/20 text-sky-300'):(esc(r.keterangan)||'-')],['warn','Peringatan',r=>(dailyConf().info[r.id]||[]).map(x=>`<div class="text-amber-300 text-xs min-w-[220px]">&#9888; ${esc(x.m)}</div>`).join('')]],
     form:[['client','Client','client',1],['tanggal','Tanggal','date',1],['plat','Plat kendaraan','unit',1],['driver','Nama driver','driver',1],['shift','Shift','select:|Siang|Malam'],['keterangan','Keterangan','textarea']] },
@@ -1328,10 +1457,10 @@ const TABS = [
   { k:'ccf', l:'CCF Medco', t:'Tabel CCF Medco (Mobilisasi / Demobilisasi)', i:'file', date:'date', xf:['periode'],
     cols:[['tipe','Tipe',r=>badge(r.tipe||'-',isDemob(r)?'bg-amber-500/20 text-amber-300':'bg-emerald-600/30 text-emerald-300')],['no','No'],['client','Client'],['name','Nama'],['plat','Plat Nomor Kendaraan',r=>esc(r.plat)||ccfUnitAuto(r)],['shift','Shift',r=>isDemob(r)?'-':(r.shift?esc(r.shift):ccfShiftAuto(r))],['roster','Roster',r=>ccfRoster(r)],['periode','Periode'],['ptsId','PTS-ID'],['company','Company'],['jobTitle','Job Title'],['departure','Departure'],['destination','Destination'],['date','Tanggal',r=>fd(r.date)],['departemen','Departemen']],
     form:[['client','Client','client',1],['tipe','Tipe','select:Mobilization|Demobilization'],['no','No','number'],['name','Nama driver (dari Driver Master)','driver',1],['plat','Plat unit (pilih dari Master Unit, atau isi manual)','unitman'],['shift','Shift (Siang / Malam)','select:|Siang|Malam'],['ptsId','PTS-ID'],['company','Company'],['jobTitle','Job title'],['departure','Departure (otomatis: Mobilization = Macang Sakti, Demobilization = Suban; bisa pilih lain atau isi manual)','dep'],['destination','Destination'],['date','Tanggal mobilisasi / demobilisasi','date',1],['departemen','Departemen'],['note','Note'],['costCenter','Cost center']] },
-  { k:'units', l:'Master Unit', t:'Tabel Master Unit Kendaraan', i:'truck', dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input', ph:'Cari plat, client, No. BAST...',
+  { k:'units', l:'Master Unit', t:'Tabel Master Unit Kendaraan', i:'truck', xf:['unitfree'], dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input', ph:'Cari plat, client, No. BAST...',
     cols:[['client','Client'],['plat','Plat'],['statusInspeksi','Status Inspeksi',r=>esc(r.statusInspeksi)||'-'],['keterangan','No. BAST',r=>esc(r.keterangan)||'-'],['pemilik','PEMILIK',r=>esc(r.pemilik)||'-'],['status','Status',r=>badge(r.status,r.status==='Aktif'?'bg-emerald-600/30 text-emerald-300':'bg-slate-600/40 text-slate-300')]],
     form:[['client','Client','client',1],['plat','Plat kendaraan','text',1],['statusInspeksi','Status Inspeksi'],['keterangan','No. BAST','bast'],['pemilik','Pemilik unit','text'],['status','Status','select:Aktif|Tidak Aktif']] },
-  { k:'drivers', l:'Data Driver', t:'Tabel Data Driver', i:'database', dm:r=>[r.mcuExp,r.hseoExp,r.simperExp].filter(Boolean), dlabel:'Dokumen berakhir',
+  { k:'drivers', l:'Data Driver', t:'Tabel Data Driver', i:'database', xf:['dokexp'], dm:r=>[r.mcuExp,r.hseoExp,r.simperExp].filter(Boolean), dlabel:'Dokumen berakhir',
     cols:[['client','Client'],['name','Nama'],['ptsId','PTS-ID'],['msid','MSID'],['mcuExp','MCU',r=>docBadge(r.mcuExp)],['hseoExp','HSEO',r=>docBadge(r.hseoExp)],['simperExp','Simper',r=>docBadge(r.simperExp)],['status','Roster',r=>badge(r.status+' H'+r.rosterDay,r.status==='ON_ROSTER'?'bg-emerald-600/30 text-emerald-300':'bg-slate-600/40 text-slate-300')],['keterangan','Keterangan']],
     form:[['client','Client','client',1],['name','Nama','text',1],['ptsId','PTS-ID'],['msid','MSID'],['mcuExp','MCU exp','date'],['hseoExp','HSEO exp','date'],['simperExp','Simper exp','date'],['phone','No. HP'],['unitType','Jenis unit'],['platKendaraan','Plat kendaraan','unit'],['shift','Shift','select:|Siang|Malam'],['rosterDay','Hari roster','number'],['status','Status roster','select:ON_ROSTER|OFF_ROSTER'],['opsStatus','Status ops','select:Standby|Operasi|Perbaikan'],['route','Rute'],['keterangan','Keterangan','textarea']] },
   { k:'identitas', l:'Input Identitas', t:'Tabel Identitas Pekerja', i:'idcard', r:1, dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input',
@@ -1495,7 +1624,10 @@ const XF_DEF = {
   nstatus: { l: 'Semua Status Penawaran', opts: () => ['Draft', 'Terkirim', 'Disetujui', 'Ditolak', 'Kedaluwarsa', 'Dibatalkan'], get: r => r.status || '' },
   pjenis: { l: 'Semua Jenis PO', opts: () => ['PO dari Client', 'PO untuk Supplier'], get: r => /untuk (Client|Supplier)/.test(r.jenis || '') ? 'PO untuk Supplier' : 'PO dari Client' },
   pstatus: { l: 'Semua Status PO', opts: () => ['Draft', 'Diajukan', 'Disetujui', 'Diproses', 'Selesai', 'Dibatalkan'], get: r => r.status || '' },
-  istatus: { l: 'Semua Status Invoice', opts: () => ['Lunas', 'Belum Dibayar'], get: r => r.statusBayar === 'Sudah Dibayar' ? 'Lunas' : 'Belum Dibayar' },
+  istatus: { l: 'Semua Status Invoice', opts: () => ['Lunas', 'Belum Dibayar', 'Lewat Jatuh Tempo'], get: r => r.statusBayar === 'Sudah Dibayar' ? 'Lunas' : 'Belum Dibayar',
+    ok: (r, v) => v === 'Lewat Jatuh Tempo' ? (r.statusBayar !== 'Sudah Dibayar' && !!r.jatuhTempo && r.jatuhTempo < today()) : (r.statusBayar === 'Sudah Dibayar' ? 'Lunas' : 'Belum Dibayar') === v },
+  dokexp: { l: 'Semua Dokumen', opts: () => ['Segera / sudah berakhir'], get: r => '', ok: (r, v) => ['mcuExp', 'hseoExp', 'simperExp'].some(f => r[f] && daysTo(r[f]) <= DB.settings.ALERT_DAYS) },
+  unitfree: { l: 'Semua Unit', opts: () => ['Aktif tanpa driver'], get: r => '', ok: (r, v) => r.status === 'Aktif' && !unitAssigned().has(String(r.plat).trim().toLowerCase()) },
   kstatus: { l: 'Semua Status Kontrak', opts: () => ['Aktif', 'Segera Berakhir', 'Berakhir', 'Belum Mulai', 'Dibatalkan'], get: r => ktrStatus(r) },
   kategori: { l: 'Semua Kategori', opts: () => [...new Set((DB.kategori || []).map(k => k.nama).concat((DB.pemasukan || []).map(x => x.kategori)).filter(Boolean))], get: r => r.kategori || '' },
   metode: { l: 'Semua Metode', opts: () => ['Transfer Bank', 'Tunai', 'Cek / Giro', 'E-Wallet', 'Lainnya'], get: r => r.metode || '' },
@@ -1504,6 +1636,9 @@ const XF_DEF = {
   periode: { l: 'Semua Periode', opts: () => [...new Set((cur === 'rekapgaji' ? (DB.slip || []) : (DB[cur] || [])).map(periodOf).filter(Boolean))].sort().reverse(), get: periodOf }
 };
 const XFV = {};
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
+let _UA = null;
+const unitAssigned = () => { if (!_UA || _UA.src !== DB.drivers) _UA = { src: DB.drivers, set: new Set(DB.drivers.map(d => String(d.platKendaraan || '').trim().toLowerCase()).filter(Boolean)) }; return _UA.set; };
 let XF_HTML = '';
 function renderXf() {
   const list = (curTab() || {}).xf || [];
@@ -1578,7 +1713,7 @@ function renderDash(has) {
 }
 // Ringkasan di atas tabel menu tertentu
 function renderOps(rows) {
-  let h = '';
+  let h = '', opsWarn = false, opsTtl = ({ pemasukan: 'Ringkasan pemasukan', po: 'Ringkasan status PO', penawaran: 'Ringkasan status penawaran', kontrak: 'Ringkasan status kontrak', ccf: 'Rekap penggunaan driver dan unit', dailyLogs: 'Peringatan Rekap Harian' })[cur] || 'Ringkasan';
   if (cur === 'pemasukan') {
     const st = pemStats(inClF);
     const per = $('d1').value || $('d2').value;
@@ -1595,9 +1730,14 @@ function renderOps(rows) {
   } else if (cur === 'dailyLogs') {
     const info = dailyConf().info, bad = rows.filter(r => info[r.id]), ms = { dup: new Set(), unit: new Set() };
     bad.forEach(r => info[r.id].forEach(x => ms[x.t].add(x.m)));
+    if (bad.length) { opsWarn = true; opsTtl = 'Peringatan Rekap Harian: ' + bad.length + ' baris bermasalah'; }
     if (bad.length) h = `<div class="rounded-lg border border-amber-700 bg-amber-950/50 text-amber-200 px-4 py-3 text-xs space-y-1"><p class="font-bold">&#9888; Peringatan Rekap Harian: ${bad.length} baris bermasalah (${ms.dup.size} data double, ${ms.unit.size} unit dibawa orang berbeda pada shift yang sama)</p>${[...ms.dup, ...ms.unit].slice(0, 8).map(m => `<p>- ${esc(m)}</p>`).join('')}${ms.dup.size + ms.unit.size > 8 ? `<p>- dan ${ms.dup.size + ms.unit.size - 8} peringatan lain (lihat kolom Peringatan)</p>` : ''}</div>`;
   } else if (cur === 'ccf') {
     h = `<div class="rounded-lg border border-[#1f2437] bg-[#141828] p-3"><p class="text-xs font-semibold text-slate-300 mb-1">Rekap penggunaan driver dan unit (sesuai filter)</p>${ccfTable(ccfRecap(rows, 12))}</div>`;
+  }
+  if (h) {
+    const open = lsGet('jmm_ops_' + cur) === '1';
+    h = `<div class="ops-fold"><button type="button" data-opsfold class="ops-h${opsWarn ? ' warn' : ''}" aria-expanded="${open}"><svg class="w-3.5 h-3.5 transition-transform" style="${open ? '' : 'transform:rotate(-90deg)'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><span>${esc(opsTtl)}</span><span class="ops-hint">${open ? 'Ketuk untuk menutup' : 'Ketuk untuk membuka'}</span></button><div class="${open ? '' : 'hidden'} mt-2">${h}</div></div>`;
   }
   $('opsBox').innerHTML = h;
   $('opsBox').classList.toggle('hidden', !h);
@@ -1605,7 +1745,7 @@ function renderOps(rows) {
 const DETAIL_TABS = ['po', 'penawaran', 'kontrak', 'pemasukan', 'kategori'];
 let ATT_LM = '', BK_CACHE = null;
 
-const isSpecial = () => cur === 'matrix' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
+const isSpecial = () => cur === 'beranda' || cur === 'matrix' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
 const visibleTabs = () => TABS.filter(t => (DB.tabs || []).includes(t.k)); // hak akses ditentukan server menurut peran
 
 /* ---------- Tampilan ---------- */
@@ -1627,14 +1767,20 @@ function renderChrome() {
   const addKeys = new Set(MENUS.flatMap(g => g[3].map(x => x[0])));
   const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).flatMap(k => k === 'timesheet' ? [k, 'rekapgaji'] : [k]).concat(name === 'Keuangan & SDM' ? ['rekaplaba'] : [])])
     .concat([['Sistem', ['backup', 'pengaturan', 'users']]]);
-  $('tabs').innerHTML = groups.map(([name, keys]) => {
-    const rows = keys.filter(k => okKeys.includes(k)).map(k => {
-      const t = TABS.find(x => x.k === k); if (!t) return '';
-      const on = k === cur, add = CAN() && addKeys.has(k) && t.form;
-      return `<div class="nav-row${on ? ' on' : ''}"><button type="button" data-k="${k}" title="${esc(t.l)}"${on ? ' aria-current="page"' : ''} class="nav-item">${ic(t.i || 'file', 'w-[18px] h-[18px] flex-none')}<span class="sb-label truncate">${esc(t.l)}</span></button>` +
-        (add ? `<button type="button" data-add="${k}" title="Tambah data: ${esc(t.l)}" aria-label="Tambah data ${esc(t.l)}" class="nav-add"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>` : '') + '</div>';
-    }).join('');
-    return rows ? `<div><p class="nav-gh sb-label-h"><span class="sb-label">${name}</span></p>${rows}</div>` : '';
+  const mkRow = k => {
+    const t = TABS.find(x => x.k === k); if (!t) return '';
+    const on = k === cur, add = CAN() && addKeys.has(k) && t.form;
+    return `<div class="nav-row${on ? ' on' : ''}"><button type="button" data-k="${k}" title="${esc(t.l)}"${on ? ' aria-current="page"' : ''} class="nav-item">${ic(t.i || 'file', 'w-[18px] h-[18px] flex-none')}<span class="sb-label truncate">${esc(t.l)}</span></button>` +
+      (add ? `<button type="button" data-add="${k}" title="Tambah data: ${esc(t.l)}" aria-label="Tambah data ${esc(t.l)}" class="nav-add"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>` : '') + '</div>';
+  };
+  let rec = []; try { rec = JSON.parse(lsGet('jmm_recent') || '[]'); } catch (e) { }
+  rec = rec.filter(k => okKeys.includes(k) && k !== 'beranda').slice(0, 3);
+  const allG = [['Utama', ['beranda']]].concat(rec.length >= 2 ? [['Terakhir dibuka', rec]] : []).concat(groups);
+  $('tabs').innerHTML = allG.map(([name, keys]) => {
+    const rows = keys.filter(k => okKeys.includes(k)).map(mkRow).join('');
+    if (!rows) return '';
+    const fixed = name === 'Utama', col = !fixed && lsGet('jmm_g_' + name) === '1';
+    return `<div class="grp${col ? ' col' : ''}">${fixed ? '' : `<p class="nav-gh sb-label-h" data-gh="${esc(name)}" role="button" tabindex="0" aria-expanded="${!col}"><span class="sb-label">${esc(name)}</span><svg class="gch sb-label" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></p>`}${rows}</div>`;
   }).join('');
 
   // Kartu ringkasan
@@ -1683,19 +1829,25 @@ function renderChrome() {
       noDriver = DB.units.filter(u => u.status === 'Aktif' && !assigned.has(String(u.plat).trim().toLowerCase())).length;
     }
   }
-  const msg = [];
-  if (docs) msg.push(`${docs} dokumen driver berakhir dalam ${DB.settings.ALERT_DAYS} hari atau sudah lewat`);
-  if (noDriver) msg.push(`${noDriver} unit aktif belum punya driver`);
-  if (late && has('invoice')) msg.push(`${late} invoice melewati jatuh tempo`);
-  if (has('kontrak')) { const n = (DB.kontrak || []).filter(r => ['Segera Berakhir', 'Berakhir'].includes(ktrStatus(r))).length; if (n) msg.push(`${n} kontrak client segera berakhir atau sudah berakhir`); }
+  // Chip peringatan: tiap jenis bisa diklik dan membuka daftar yang bermasalah
+  const chips = [];
+  const addChip = (txt, sev, tab, xf, val) => chips.push({ txt, sev, tab, xf, val });
+  if (docs) { let exp = 0; DB.drivers.forEach(d => ['mcuExp', 'hseoExp', 'simperExp'].forEach(f => { if (d[f] && daysTo(d[f]) < 0) exp++; })); addChip(`${docs} dokumen driver berakhir (≤ ${DB.settings.ALERT_DAYS} hari / lewat)`, exp ? 'bad' : 'warn', 'drivers', 'dokexp', 'Segera / sudah berakhir'); }
+  if (noDriver) addChip(`${noDriver} unit aktif belum punya driver`, 'warn', 'units', 'unitfree', 'Aktif tanpa driver');
+  if (late && has('invoice')) addChip(`${late} invoice lewat jatuh tempo`, 'bad', 'invoice', 'istatus', 'Lewat Jatuh Tempo');
+  if (has('kontrak')) { const L = (DB.kontrak || []).filter(r => ['Segera Berakhir', 'Berakhir'].includes(ktrStatus(r))); if (L.length) addChip(`${L.length} kontrak client segera / sudah berakhir`, L.some(r => ktrStatus(r) === 'Berakhir') ? 'bad' : 'warn', 'kontrak'); }
   if (DB.backup) {
-    if (DB.backup.status === 'GAGAL') msg.push('Backup terakhir GAGAL (buka tab Backup)');
-    else if (!DB.backup.last) msg.push('Backup otomatis belum pernah berjalan (jalankan installTriggers atau klik Backup sekarang)');
-    else if (daysTo(String(DB.backup.last).slice(0, 10)) < -1) msg.push('Backup terakhir sudah lebih dari 1 hari lalu');
+    if (DB.backup.status === 'GAGAL') addChip('Backup terakhir GAGAL', 'bad', 'backup');
+    else if (!DB.backup.last) addChip('Backup otomatis belum pernah berjalan', 'warn', 'backup');
+    else if (daysTo(String(DB.backup.last).slice(0, 10)) < -1) addChip('Backup terakhir lebih dari 1 hari lalu', 'warn', 'backup');
   }
-  if (DB.pendingPw) msg.push(`${DB.pendingPw} permintaan ganti password menunggu persetujuan (buka tab Pengguna)`);
-  $('alertBar').classList.toggle('hidden', !msg.length);
-  $('alertBar').textContent = msg.join('. ') + '.';
+  if (DB.pendingPw) addChip(`${DB.pendingPw} permintaan ganti password menunggu`, 'warn', 'users');
+  window.ALERT_ITEMS = chips;
+  const alKey = chips.map(c => c.txt).join('|');
+  let dis = false; try { dis = sessionStorage.getItem('jmm_al_off') === alKey; } catch (e) { }
+  $('alertBar').classList.toggle('hidden', !chips.length || dis);
+  $('alertBar').dataset.key = alKey;
+  $('alertBar').innerHTML = chips.map(c => `<button type="button" class="alc ${c.sev}" data-al="${c.tab}|${c.xf || ''}|${esc(c.val || '')}"><span class="alc-dot"></span>${esc(c.txt)}</button>`).join('') + (chips.length ? '<button type="button" class="alc-x" data-alx="1" title="Sembunyikan sementara" aria-label="Sembunyikan peringatan">&times;</button>' : '');
 }
 
 const PNBTN = r => cur === 'penawaran' ? `<button data-a="pnpv" data-id="${esc(r.id)}" class="px-1.5 text-sky-300 hover:text-sky-200">Pratinjau</button><button data-a="pnpdf" data-id="${esc(r.id)}" class="px-1.5 text-emerald-300 hover:text-emerald-200">Cetak PDF</button>` : '';
@@ -1722,15 +1874,15 @@ function render() {
   $('btnSlipTs').classList.toggle('hidden', !['slip', 'rekapgaji', 'timesheet'].includes(cur) || !CAN());
   $('btnAll').classList.toggle('hidden', cur !== 'slip' || !ISC());
   $('btnSlipPv').classList.toggle('hidden', cur !== 'slip' || !CANPREV());
-  const noExp = cur === 'pengaturan' || cur === 'users' || cur === 'backup';
+  const noExp = cur === 'beranda' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
   $('opsBox').classList.add('hidden');
   $('btnPdf').classList.toggle('hidden', noExp);
   $('btnPv').classList.toggle('hidden', noExp || cur === 'slip' || cur === 'ccf'); // slip dan CCF punya tombol pratinjau sendiri
   $('btnXls').classList.toggle('hidden', noExp);
   $('btnCcf').classList.toggle('hidden', cur !== 'ccf');
   $('btnCcfPv').classList.toggle('hidden', cur !== 'ccf');
-  $('btnSwap').classList.toggle('hidden', !(DB.tabs || []).includes('drivers') || !CAN());
-  $('filters').classList.toggle('hidden', cur === 'pengaturan' || cur === 'users' || cur === 'backup');
+  $('btnSwap').classList.toggle('hidden', !(DB.tabs || []).includes('drivers') || !CAN() || cur === 'beranda');
+  $('filters').classList.toggle('hidden', noExp);
   renderXf();
   $('q').placeholder = t.ph || 'Cari...';
   $('tf').classList.toggle('hidden', cur !== 'ccf');
@@ -1741,6 +1893,7 @@ function render() {
   $('dlabel').textContent = (t.dlabel || 'Periode') + ':';
   $('km').classList.toggle('hidden', cur !== 'kontrak');
   if (cur === 'timesheet' && !$('d1').value && !$('d2').value) applyPreset('bulan');
+  if (cur === 'beranda') return renderBeranda();
   if (cur === 'backup') { $('count').textContent = ''; return renderBackup(); }
   if (cur === 'matrix') { $('q').placeholder = 'Cari nama driver...'; return renderMatrix(); }
   if (cur === 'pengaturan') { $('count').textContent = ''; return renderSettings(); }
@@ -1787,7 +1940,7 @@ function render() {
     '<tr class="hover:bg-white/[0.04] transition-colors"><td class="px-4 py-3.5 text-slate-400">' + no + '</td>' + t.cols.map(c => `<td class="px-4 py-3.5">${cell(c, r)}</td>`).join('') + `<td class="px-4 py-3.5 text-center whitespace-nowrap">${actions(r)}</td></tr>`).join('');
   const cards = items.map(({ r, g, first, no }) =>
     (first ? `<div class="px-4 py-2 bg-[#1b2033] text-xs font-bold tracking-widest ${gcls(g)}">${g} (${gcount[g]} orang)</div>` : '') +
-    `<div class="p-4"><p class="text-xs text-slate-400 mb-2">No. ${no}</p><div class="grid grid-cols-2 gap-x-3 gap-y-2">${t.cols.map(c => `<div class="min-w-0"><p class="text-[10px] uppercase tracking-wide text-slate-400">${c[1]}</p><div class="text-xs break-words">${cell(c, r)}</div></div>`).join('')}</div><div class="pt-2 mt-2 border-t border-[#1f2437] flex flex-wrap gap-1">${actions(r)}</div></div>`).join('');
+    `<div class="p-4"><p class="text-xs text-slate-400 mb-2">No. ${no}</p><div class="grid grid-cols-2 gap-x-3 gap-y-2">${t.cols.slice(0, 4).map(c => `<div class="min-w-0"><p class="text-[10px] uppercase tracking-wide text-slate-400">${c[1]}</p><div class="text-xs break-words">${cell(c, r)}</div></div>`).join('')}</div>${t.cols.length > 4 ? `<div class="more hidden grid grid-cols-2 gap-x-3 gap-y-2 mt-2">${t.cols.slice(4).map(c => `<div class="min-w-0"><p class="text-[10px] uppercase tracking-wide text-slate-400">${c[1]}</p><div class="text-xs break-words">${cell(c, r)}</div></div>`).join('')}</div><button type="button" data-more class="mt-2 text-xs font-semibold text-red-300">Detail ▾</button>` : ''}<div class="pt-2 mt-2 border-t border-[#1f2437] flex flex-wrap gap-1">${actions(r)}</div></div>`).join('');
   $('view').innerHTML =
     `<table class="hidden md:table w-full text-left text-[13px]"><thead><tr>${head}</tr></thead><tbody class="divide-y divide-[#1f2437]/50">${body}</tbody></table>` +
     `<div class="md:hidden divide-y divide-[#1f2437]">${cards}</div>`;
@@ -1835,17 +1988,43 @@ function renderSettings() {
 function openModal(title, html, submit) {
   $('mt').textContent = title;
   $('mb').innerHTML = html;
+  formPolish();
+  $('mErr').style.display = 'none';
   $('modal').classList.remove('hidden');
   $('ms').classList.remove('hidden');
+  $('mf').noValidate = true;
+  $('mf').oninput = e => { const l = e.target.closest && e.target.closest('label'); if (l) { l.querySelectorAll('.ferr').forEach(x => x.remove()); e.target.classList.remove('ferr-in'); } };
   $('mf').onsubmit = async e => {
     e.preventDefault();
+    $('mErr').style.display = 'none';
+    document.querySelectorAll('#mf .ferr').forEach(x => x.remove());
+    document.querySelectorAll('#mf .ferr-in').forEach(x => x.classList.remove('ferr-in'));
+    const bad = [...$('mf').querySelectorAll('[required]')].filter(el => !String(el.value || '').trim());
+    if (bad.length) {
+      bad.forEach(el => { const l = el.closest('label'); if (!l) return; el.classList.add('ferr-in'); if (el.type === 'date' && el.parentElement) el.parentElement.firstElementChild.classList.add('ferr-in'); l.insertAdjacentHTML('beforeend', '<p class="ferr">Wajib diisi.</p>'); });
+      const f = bad[0]; try { f.closest('label').scrollIntoView({ block: 'center', behavior: 'smooth' }); if (f.type !== 'date') f.focus({ preventScroll: true }); } catch (x) { }
+      return;
+    }
     setBusy($('ms'), true, 'Memproses...');
     try { await submit(Object.fromEntries(new FormData($('mf')))); }
-    catch (err) { toast(err.message || String(err), true); }
+    catch (err) { const m = err.message || String(err); $('mErr').textContent = m; $('mErr').style.display = 'block'; toast(m, true); try { $('mErr').scrollIntoView({ block: 'nearest' }); } catch (x) { } }
     finally { setBusy($('ms'), false); }
   };
 }
 const closeM = () => $('modal').classList.add('hidden');
+// Form panjang dibagi ke seksi: Data utama (wajib + 3 pertama), Detail, Catatan
+function formPolish() {
+  const grid = $('mb').querySelector(':scope > .grid'); if (!grid) return;
+  const items = [...grid.children].filter(x => x.tagName === 'LABEL');
+  if (items.length < 7) return;
+  const A = [], B = [], C = [];
+  items.forEach((el, i) => { if (el.querySelector('textarea')) C.push(el); else if (i < 3 || /\*\s*$/.test((el.firstElementChild || {}).textContent || '')) A.push(el); else B.push(el); });
+  if (!B.length && !C.length) return;
+  const frag = document.createDocumentFragment();
+  [['Data utama', A], ['Detail', B], ['Catatan', C]].forEach(([n, arr]) => { if (!arr.length) return; const p = document.createElement('p'); p.className = 'fsec'; p.textContent = n; const d = document.createElement('div'); d.className = 'grid sm:grid-cols-2 gap-4'; arr.forEach(x => d.appendChild(x)); frag.append(p, d); });
+  [...grid.children].forEach(x => frag.lastChild.appendChild(x)); // sisa elemen (datalist dsb.)
+  grid.replaceWith(frag);
+}
 
 function openForm(row) {
   const t = curTab();
@@ -2401,11 +2580,92 @@ function renderTimesheet() {
 }
 
 
+
+/* ---------- Beranda: ringkasan, grafik, dan daftar tindakan ---------- */
+const hasTab = k => (DB.tabs || []).includes(k);
+const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const shortRp = v => { const a = Math.abs(v), s = v < 0 ? '-' : ''; if (a >= 1e9) return s + (a / 1e9).toFixed(1).replace('.', ',') + ' M'; if (a >= 1e6) return s + (a / 1e6).toFixed(1).replace('.', ',') + ' jt'; if (a >= 1e3) return s + Math.round(a / 1e3) + ' rb'; return s + Math.round(a); };
+const lastMonths = n => { const t = today(); let y = +t.slice(0, 4), m = +t.slice(5, 7); const o = []; for (let i = 0; i < n; i++) { o.unshift(y + '-' + String(m).padStart(2, '0')); m--; if (m < 1) { m = 12; y--; } } return o; };
+const monthEnd = ym => { const [y, m] = ym.split('-').map(Number); return ym + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0'); };
+const monLbl = ym => BLN[+ym.slice(5) - 1] + ' ' + ym.slice(2, 4);
+function goTo(tab, xf, val) { if (!(DB.tabs || []).includes(tab)) return; if (xf) XFV[tab + ':' + xf] = val; cur = tab; render(); window.scrollTo(0, 0); }
+function barChart(labels, series, stacked) {
+  const W = 560, H = 196, pl = 8, pr = 8, pt = 18, pb = 26, n = labels.length;
+  const tot = i => series.reduce((t, s) => t + Math.max(0, s.vals[i]), 0);
+  const max = Math.max(1, ...labels.map((_, i) => stacked ? tot(i) : Math.max(0, ...series.map(s => s.vals[i]))));
+  const min = stacked ? 0 : Math.min(0, ...series.flatMap(s => s.vals));
+  const rng = max - min || 1, ph = H - pt - pb, y = v => pt + (max - v) / rng * ph, y0 = y(0);
+  const gw = (W - pl - pr) / n, bw = Math.min(46, gw * 0.62 / (stacked ? 1 : series.length));
+  let g = `<line x1="${pl}" x2="${W - pr}" y1="${y0}" y2="${y0}" class="bc-ax"/>`;
+  labels.forEach((lb, i) => {
+    const cx = pl + gw * i + gw / 2;
+    if (stacked) {
+      let acc = 0;
+      series.forEach(s => { const v = Math.max(0, s.vals[i]); if (!v) return; const top = y(acc + v), h = y(acc) - top; g += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${Math.max(h, 1.5)}" rx="5" fill="${s.color}"><title>${esc(s.name)} ${esc(lb)}: ${esc(rp(v))}</title></rect>`; acc += v; });
+      if (tot(i)) g += `<text x="${cx}" y="${y(tot(i)) - 5}" text-anchor="middle" class="bc-v">${shortRp(tot(i))}</text>`;
+    } else series.forEach((s, j) => {
+      const v = s.vals[i], x = cx - bw * series.length / 2 + bw * j, top = Math.min(y(v), y0), h = Math.abs(y(v) - y0);
+      g += `<rect x="${x}" y="${top}" width="${bw - 2}" height="${Math.max(h, 1.5)}" rx="5" fill="${v < 0 ? '#f87171' : s.color}"><title>${esc(s.name)} ${esc(lb)}: ${esc(rp(v))}</title></rect>`;
+      if (v) g += `<text x="${x + (bw - 2) / 2}" y="${v >= 0 ? top - 5 : top + h + 12}" text-anchor="middle" class="bc-v">${shortRp(v)}</text>`;
+    });
+    g += `<text x="${cx}" y="${H - 8}" text-anchor="middle" class="bc-l">${esc(lb)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" role="img">${g}</svg>`;
+}
+function renderBeranda() {
+  $('count').textContent = '';
+  const t = today(), ym = t.slice(0, 7), months = lastMonths(6), pm = months[4];
+  const showMoney = !!SHOWN.bera, M = v => showMoney ? rp(v) : 'Rp ••••••';
+  const alerts = window.ALERT_ITEMS || [];
+  const hr = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false }).format(new Date());
+  const sapa = hr < 11 ? 'Selamat pagi' : hr < 15 ? 'Selamat siang' : hr < 18 ? 'Selamat sore' : 'Selamat malam';
+  const tgl = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+  const cards = [];
+  const kpi = (icon, bg, label, val, sub, go, extra) => cards.push(`<button type="button" class="bkpi" data-bgo="${esc(go || '')}"><span class="flex items-start justify-between"><span class="flex-none w-9 h-9 rounded-xl grid place-items-center ${bg}">${ic(icon, 'w-[18px] h-[18px]')}</span>${extra || ''}</span><span class="bk-l">${esc(label)}</span><span class="bk-v">${val}</span><span class="bk-s">${sub}</span></button>`);
+  if (hasTab('dailyLogs')) {
+    const n = new Set((DB.dailyLogs || []).filter(r => r.tanggal === t && normNama(r.driver)).map(r => normNama(r.driver))).size;
+    kpi('users', 'bg-emerald-500/15 text-emerald-300', 'Driver bertugas hari ini', n, 'tercatat di Rekap Harian', 'dailyLogs||');
+  }
+  if (hasTab('drivers')) { const on = DB.drivers.filter(d => d.status === 'ON_ROSTER').length; kpi('briefcase', 'bg-sky-500/15 text-sky-300', 'Driver ON roster', on, `dari ${DB.drivers.length} driver`, 'matrix||'); }
+  if (hasTab('units') && hasTab('drivers')) { const n = DB.units.filter(u => u.status === 'Aktif' && !unitAssigned().has(String(u.plat).trim().toLowerCase())).length; kpi('truck', n ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300', 'Unit aktif tanpa driver', `<span class="${n ? 'text-amber-300' : ''}">${n}</span>`, `dari ${DB.units.filter(u => u.status === 'Aktif').length} unit aktif`, 'units|unitfree|Aktif tanpa driver'); }
+  if (hasTab('invoice')) {
+    const L = DB.invoice.filter(i => i.statusBayar !== 'Sudah Dibayar'), sum = L.reduce((s, i) => s + (i.nilai || 0), 0), late = L.filter(i => i.jatuhTempo && i.jatuhTempo < t).length;
+    kpi('card', late ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300', 'Invoice belum lunas', M(sum), `${L.length} invoice` + (late ? ` · <span class="text-red-300">${late} lewat jatuh tempo</span>` : ''), 'invoice|istatus|Belum Dibayar',
+      `<span class="bk-eye" data-eye="bera" role="button" tabindex="0" title="${showMoney ? 'Sembunyikan angka' : 'Tampilkan angka'}" aria-label="${showMoney ? 'Sembunyikan angka' : 'Tampilkan angka'}">${ic(showMoney ? 'eye' : 'eyeoff', 'w-4 h-4')}</span>`);
+  }
+  let labaNow = null, serLaba = null, perClient = [];
+  if (hasTab('rekaplaba')) {
+    const mm = m => rlModel({ cf: 'ALL', a: m + '-01', b: monthEnd(m), q: '' });
+    const ms = months.map(mm); serLaba = ms.map(x => x.tot.laba);
+    labaNow = serLaba[5]; const prv = serLaba[4], d = prv ? (labaNow - prv) / Math.abs(prv) * 100 : null;
+    perClient = ms[5].rows.slice().sort((a, b) => b.laba - a.laba);
+    kpi('dollar', labaNow < 0 ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300', 'Keuntungan bulan ini', `<span class="${labaNow < 0 ? 'text-red-300' : 'text-emerald-300'}">${M(labaNow)}</span>`,
+      d == null ? 'belum ada pembanding bulan lalu' : `<span class="${d >= 0 ? 'text-emerald-300' : 'text-red-300'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(0)}%</span> dari ${monLbl(pm)}`, 'rekaplaba||');
+  }
+  kpi('alert', alerts.length ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300', 'Perlu perhatian', `<span class="${alerts.length ? 'text-amber-300' : 'text-emerald-300'}">${alerts.length}</span>`, alerts.length ? 'lihat daftar di bawah' : 'semua aman', 'scroll|todo|');
+
+  let charts = '';
+  if (serLaba) charts += `<section class="bcard"><div class="bcard-h"><p>Keuntungan 6 bulan terakhir</p><span>${showMoney ? 'semua client' : 'angka disembunyikan'}</span></div>${showMoney ? barChart(months.map(monLbl), [{ name: 'Keuntungan', color: '#34d399', vals: serLaba }], false) : '<p class="bc-hide">Klik ikon mata pada kartu Invoice belum lunas untuk menampilkan angka.</p>'}</section>`;
+  if (hasTab('invoice')) {
+    const lun = months.map(m => DB.invoice.filter(i => String(i.tglTagihan || '').slice(0, 7) === m && i.statusBayar === 'Sudah Dibayar').reduce((s, i) => s + (i.nilai || 0), 0));
+    const bel = months.map(m => DB.invoice.filter(i => String(i.tglTagihan || '').slice(0, 7) === m && i.statusBayar !== 'Sudah Dibayar').reduce((s, i) => s + (i.nilai || 0), 0));
+    charts += `<section class="bcard"><div class="bcard-h"><p>Invoice: lunas vs belum dibayar</p><span><i class="bc-dot" style="background:#34d399"></i>Lunas <i class="bc-dot" style="background:#fbbf24"></i>Belum</span></div>${showMoney ? barChart(months.map(monLbl), [{ name: 'Lunas', color: '#34d399', vals: lun }, { name: 'Belum dibayar', color: '#fbbf24', vals: bel }], true) : '<p class="bc-hide">Angka disembunyikan.</p>'}</section>`;
+  }
+  const maxAbs = Math.max(1, ...perClient.map(x => Math.abs(x.laba)));
+  const pcHtml = perClient.length && showMoney ? `<section class="bcard"><div class="bcard-h"><p>Keuntungan per client (${monLbl(ym)})</p><button type="button" class="bc-link" data-bgo="rekaplaba||">Buka rekap ›</button></div><div class="space-y-2.5">${perClient.slice(0, 6).map(x => `<div><div class="flex justify-between text-xs mb-1"><span class="truncate pr-3">${esc(shortCl(x.client))}</span><span class="${x.laba < 0 ? 'text-red-300' : 'text-emerald-300'} font-semibold tabular-nums">${esc(rp(x.laba))}</span></div><div class="bc-track"><div class="${x.laba < 0 ? 'bc-neg' : 'bc-pos'}" style="width:${Math.max(3, Math.abs(x.laba) / maxAbs * 100)}%"></div></div></div>`).join('')}</div></section>` : '';
+  const todo = `<section class="bcard" id="todoBox"><div class="bcard-h"><p>Perlu tindakan hari ini</p><span>${alerts.length} item</span></div>` + (alerts.length
+    ? `<div class="space-y-2">${alerts.map(a => `<button type="button" class="todo ${a.sev}" data-bgo="${esc(a.tab)}|${esc(a.xf || '')}|${esc(a.val || '')}"><span class="alc-dot"></span><span class="flex-1 text-left">${esc(a.txt)}</span><span class="todo-go">Buka ›</span></button>`).join('')}</div>`
+    : `<p class="flex items-center gap-2 text-sm text-emerald-300">${ic('check', 'w-5 h-5')}Tidak ada yang perlu ditindaklanjuti. Semua aman.</p>`) + '</section>';
+  $('view').innerHTML = `<div class="space-y-4"><div class="flex flex-wrap items-end justify-between gap-2"><div><p class="text-lg font-semibold">${sapa}, ${esc((ROLE_LBL[DB.role] || DB.role || '').toString() || 'Bung')}</p><p class="text-xs text-slate-400">${esc(tgl)}</p></div></div>` +
+    `<div class="grid grid-cols-2 xl:grid-cols-3 gap-3">${cards.join('')}</div>` +
+    `<div class="grid gap-4 lg:grid-cols-2">${charts}</div><div class="grid gap-4 lg:grid-cols-2">${todo}${pcHtml}</div></div>`;
+}
+
 /* ---------- Rekapitulasi Keuntungan Per Client ---------- */
 // Pendapatan = invoice (sebelum PPN), Beban = pengeluaran operasional (kecuali kategori Gaji) + beban gaji dari Slip (gaji kotor + BPJS perusahaan)
 const dppOf = r => Number(r.hargaSewa) > 0 ? Number(r.hargaSewa) : Math.round((Number(r.nilai) || 0) / (1 + (Number(r.ppn) > 0 ? Number(r.ppn) : 11) / 100));
-function rlModel() {
-  const cf = $('cf').value || 'ALL', a = $('d1').value, b = $('d2').value, q = $('q').value.toLowerCase().trim();
+function rlModel(o) {
+  const O = o || {}, cf = O.cf || $('cf').value || 'ALL', a = 'a' in O ? O.a : $('d1').value, b = 'b' in O ? O.b : $('d2').value, q = String('q' in O ? O.q : $('q').value).toLowerCase().trim();
   const S = (L, f) => L.reduce((t, r) => t + (Number(typeof f === 'function' ? f(r) : r[f]) || 0), 0);
   const inv = (DB.invoice || []).filter(r => inRange(r.tglTagihan, a, b));
   const exp = (DB.pengeluaran || []).filter(r => inRange(r.tanggal, a, b) && !/^gaji/i.test(r.kategori || ''));
@@ -3624,10 +3884,11 @@ $('btnCcf').onclick = async () => { const b = $('btnCcf'); b.disabled = true; tr
 /* ---------- Aksi ---------- */
 function toast(m, err) {
   const t = $('toast');
-  t.textContent = m;
-  t.className = 'fixed bottom-4 right-4 z-[60] px-4 py-2 rounded-lg shadow-lg text-white ' + (err ? 'bg-red-600' : 'bg-emerald-600');
+  t.innerHTML = `<span class="toast-ic">${err ? '!' : '&#10003;'}</span><span>${esc(m)}</span>`;
+  t.className = 'toast ' + (err ? 'err' : 'ok');
+  t.setAttribute('role', 'status');
   clearTimeout(toast.h);
-  toast.h = setTimeout(() => t.classList.add('hidden'), 4000);
+  toast.h = setTimeout(() => t.classList.add('hidden'), err ? 6000 : 3800);
 }
 async function run(p) {
   try { const r = await p; toast(r.message, !r.success); await load(); return r; }
@@ -3805,6 +4066,15 @@ $('btnSync').onclick = async () => {
   catch (e) { toast(e.message || String(e), true); }
   finally { setBusy(b, false); }
 };
+$('alertBar').addEventListener('click', e => {
+  if (e.target.closest('[data-alx]')) { try { sessionStorage.setItem('jmm_al_off', $('alertBar').dataset.key || ''); } catch (x) { } $('alertBar').classList.add('hidden'); return; }
+  const b = e.target.closest('[data-al]'); if (!b) return;
+  const [tab, xf, val] = b.dataset.al.split('|');
+  if (!(visibleTabs ? visibleTabs() : []).some(t => t.k === tab)) return;
+  if (xf) XFV[tab + ':' + xf] = val;
+  cur = tab; render();
+});
+$('opsBox').addEventListener('click', e => { const b = e.target.closest('[data-opsfold]'); if (!b) return; lsSet('jmm_ops_' + cur, b.getAttribute('aria-expanded') === 'true' ? '0' : '1'); render(); });
 $('xf').addEventListener('change', e => { const x = e.target.closest('[data-xf]'); if (x) { XFV[cur + ':' + x.dataset.xf] = x.value; render(); } });
 $('btnAdd').onclick = () => openForm();
 $('mx').onclick = $('mc').onclick = closeM;
@@ -3850,7 +4120,7 @@ $('lf').onsubmit = async e => {
     TOKEN = r.token;
     try { sessionStorage.setItem('jmmTok', TOKEN); } catch (err) { /* abaikan */ }
     $('lp').value = '';
-    cur = 'dailyLogs';
+    cur = 'beranda';
     await load();
   } catch (err) { $('lm').textContent = err.message || String(err); }
   finally { setBusy($('lb'), false); }
@@ -4002,7 +4272,7 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
   document.addEventListener('click', e => { if (!e.target.closest('#profileMenu,#expMenu,#btnProfile,#btnExp') || e.target.closest('#profileMenu button,#expMenu button')) closePop(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePop(); if (!desk()) closeDrawer(); } });
   // ringkasan bisa dilipat (default tertutup di HP)
-  const kpiOpen = () => { const v = sget('jmm_kpi'); return v === null ? desk() : v === '1'; };
+  const kpiOpen = () => sget('jmm_kpi') === '1'; // bawaan: tertutup agar tabel langsung terlihat
   const applyKpi = () => { const o = kpiOpen(); g('kpiBody').classList.toggle('hidden', !o); g('kpiChev').style.transform = o ? '' : 'rotate(-90deg)'; g('btnKpi').setAttribute('aria-expanded', String(o)); };
   g('btnKpi').onclick = () => { sset('jmm_kpi', kpiOpen() ? '0' : '1'); applyKpi(); };
   applyKpi();
@@ -4074,6 +4344,98 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
   const _render = render;
   render = function () { const r = _render.apply(this, arguments); try { window.uiAfterRender(); } catch (e) { console.error(e); } return r; };
 })();
+
+/* ---------- UI tahap 2: beranda, navigasi cepat, tabel, tema ---------- */
+(function () {
+  const g = id => document.getElementById(id);
+  const sget = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const sset = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
+  // tema terang / gelap
+  const applyTheme = () => { document.documentElement.classList.toggle('light', sget('jmm_theme') === 'light'); const b = g('btnTheme'); if (b) { const l = sget('jmm_theme') === 'light'; b.setAttribute('aria-label', l ? 'Pakai tema gelap' : 'Pakai tema terang'); b.title = b.getAttribute('aria-label'); b.innerHTML = ic(l ? 'moon' : 'sun', 'w-[18px] h-[18px]'); } };
+  applyTheme();
+  const flipTheme = () => { sset('jmm_theme', sget('jmm_theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+  g('btnTheme').onclick = flipTheme; g('btnTheme2').onclick = flipTheme;
+
+  // pencarian cepat (Ctrl+K)
+  let palSel = 0, palItems = [];
+  const palOpen = () => { g('pal').classList.remove('hidden'); g('palq').value = ''; palRender(); setTimeout(() => g('palq').focus(), 30); document.body.style.overflow = 'hidden'; };
+  const palClose = () => { g('pal').classList.add('hidden'); document.body.style.overflow = ''; };
+  const palRender = () => {
+    const q = g('palq').value.toLowerCase().trim(), vis = visibleTabs(), items = [];
+    vis.filter(t => !q || (t.l + ' ' + (t.t || '')).toLowerCase().includes(q)).slice(0, q ? 6 : 8).forEach(t => items.push({ g: 'Menu', ico: t.i || 'file', t: t.l, s: t.t || '', go: () => goTo(t.k) }));
+    if (q.length >= 2) {
+      const add = (grp, ico, tab, arr, tt, ss, key) => { if (!hasTab(tab)) return; arr.filter(r => key(r).toLowerCase().includes(q)).slice(0, 4).forEach(r => items.push({ g: grp, ico, t: tt(r), s: ss(r), go: () => { cur = tab; g('q').value = tt(r); render(); window.scrollTo(0, 0); } })); };
+      add('Driver', 'users', 'drivers', DB.drivers || [], r => r.name, r => [r.client, r.ptsId].filter(Boolean).join(' · '), r => [r.name, r.ptsId, r.msid].join(' '));
+      add('Unit', 'truck', 'units', DB.units || [], r => r.plat, r => r.client || '', r => r.plat || '');
+      add('Invoice', 'card', 'invoice', DB.invoice || [], r => r.noInvoice, r => [r.client, rp(r.nilai)].filter(Boolean).join(' · '), r => [r.noInvoice, r.client].join(' '));
+    }
+    palItems = items; palSel = Math.min(palSel, Math.max(0, items.length - 1));
+    let last = '';
+    g('pall').innerHTML = items.length ? items.map((x, i) => { const hd = x.g !== last ? `<p class="pal-g">${x.g}</p>` : ''; last = x.g; return hd + `<button type="button" class="pal-i${i === palSel ? ' on' : ''}" data-pi="${i}">${ic(x.ico, 'w-4 h-4 flex-none')}<span class="min-w-0"><span class="block truncate">${esc(x.t)}</span>${x.s ? `<span class="block truncate text-[11px] text-slate-400">${esc(x.s)}</span>` : ''}</span></button>`; }).join('') : '<p class="p-4 text-sm text-slate-400">Tidak ada hasil.</p>';
+  };
+  const palRun = i => { const x = palItems[i]; if (!x) return; palClose(); x.go(); };
+  g('palq').addEventListener('input', () => { palSel = 0; palRender(); });
+  g('pall').addEventListener('click', e => { const b = e.target.closest('[data-pi]'); if (b) palRun(+b.dataset.pi); });
+  g('pal').addEventListener('click', e => { if (e.target === g('pal')) palClose(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); g('pal').classList.contains('hidden') ? palOpen() : palClose(); return; }
+    if (g('pal').classList.contains('hidden')) return;
+    if (e.key === 'Escape') palClose();
+    else if (e.key === 'ArrowDown') { e.preventDefault(); palSel = Math.min(palItems.length - 1, palSel + 1); palRender(); const el = g('pall').querySelector('.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); palSel = Math.max(0, palSel - 1); palRender(); const el = g('pall').querySelector('.on'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'Enter') { e.preventDefault(); palRun(palSel); }
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-pal]')) { palOpen(); return; }
+    if (e.target.closest('[data-menu-open]')) { g('btnMenu').click(); return; }
+    const gh = e.target.closest('.nav-gh[data-gh]');
+    if (gh) { const k = 'jmm_g_' + gh.dataset.gh; sset(k, sget(k) === '1' ? '0' : '1'); renderChrome(); }
+  });
+  document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.nav-gh[data-gh]')) { e.preventDefault(); e.target.click(); } });
+
+  // klik kartu beranda / item tindakan / tombol dalam tabel
+  g('view').addEventListener('click', e => {
+    if (e.target.closest('[data-eye]')) return;
+    const b = e.target.closest('[data-bgo]');
+    if (b) {
+      const [tab, xf, val] = b.dataset.bgo.split('|');
+      if (tab === 'scroll') { const el = g('todoBox'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      goTo(tab, xf, val); return;
+    }
+    const mb = e.target.closest('[data-more]');
+    if (mb) { const box = mb.parentElement.querySelector('.more'); const o = box.classList.toggle('hidden'); mb.textContent = o ? 'Detail ▾' : 'Tutup ▴'; }
+  });
+
+  const GROUP_OF = k => { for (const [name, , , items] of MENUS) if (items.some(x => x[0] === k)) return name; return k === 'rekapgaji' ? 'Operasional' : k === 'rekaplaba' ? 'Keuangan & SDM' : k === 'beranda' ? 'Utama' : 'Sistem'; };
+  const ICO = {
+    'Ubah': 'pencil', 'Hapus': 'trash', 'Ganti status': 'refresh', 'Pratinjau': 'eye', 'Preview PDF': 'eye', 'Cetak PDF': 'printer', 'Detail': 'filelist', 'Lampiran': 'clip'
+  };
+  window.uiAfterRender2 = function () {
+    document.body.dataset.cur = cur;
+    const view = g('view'), isTbl = !!(view.firstElementChild && view.firstElementChild.tagName === 'TABLE');
+    document.body.toggleAttribute('data-tbl', isTbl);
+    // terakhir dibuka
+    if (cur !== 'beranda') { let r = []; try { r = JSON.parse(sget('jmm_recent') || '[]'); } catch (e) { } if (r[0] !== cur) { r = [cur].concat(r.filter(x => x !== cur)).slice(0, 4); sset('jmm_recent', JSON.stringify(r)); } }
+    // breadcrumb + tombol kembali
+    const t = curTab(), cr = g('crumb');
+    if (cr) { cr.innerHTML = cur === 'beranda' ? '' : `<button type="button" class="crumb-back md:hidden" data-k="beranda" aria-label="Kembali ke Beranda">‹ Beranda</button><span class="hidden md:inline"><button type="button" class="crumb-l" data-k="beranda">Beranda</button> › ${esc(GROUP_OF(cur))} › <b class="text-slate-200 font-medium">${esc(t.l)}</b></span>`; }
+    // bottom bar
+    document.querySelectorAll('#bnav [data-k]').forEach(b => { b.classList.toggle('on', b.dataset.k === cur); b.classList.toggle('hidden', !hasTab(b.dataset.k)); });
+    // ikon pada kolom Aksi (tabel layar lebar); teks asli jadi tooltip
+    view.querySelectorAll('table button[data-a]').forEach(b => {
+      if (b.dataset.ico) return;
+      const label = b.textContent.trim(), base = label.replace(/\s*\(\d+\)$/, ''), key = ICO[base]; if (!key) return;
+      const cnt = (label.match(/\((\d+)\)$/) || [])[1];
+      b.dataset.ico = '1'; b.title = label; b.setAttribute('aria-label', label); b.classList.add('ico-btn');
+      b.innerHTML = ic(key, 'w-4 h-4') + (cnt ? `<span class="ico-n">${cnt}</span>` : '');
+    });
+    // label aksesibilitas untuk tombol tanpa teks
+    document.querySelectorAll('button:not([aria-label])').forEach(b => { if (!b.textContent.trim() && b.title) b.setAttribute('aria-label', b.title); });
+  };
+  const _r2 = render;
+  render = function () { const r = _r2.apply(this, arguments); try { window.uiAfterRender2(); } catch (e) { console.error(e); } return r; };
+})();
+
 setInterval(() => { $('clock').textContent = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB'; }, 1000);
 // Data otomatis diperbarui tiap 60 detik (tidak mengganggu saat form / lampiran sedang dibuka)
 setInterval(() => { if (!TOKEN || document.hidden) return; if (['modal', 'att', 'pv', 'bpv'].some(id => !$(id).classList.contains('hidden'))) return; load(); }, 60000);
