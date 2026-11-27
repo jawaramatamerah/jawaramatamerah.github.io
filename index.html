@@ -1079,7 +1079,7 @@ const API = {
     const tgl = toIso_(date);
     if (!tgl) throw new Error('Tanggal tidak valid.');
     ops = Array.isArray(ops) ? ops : [];
-    let tambah = 0, ubah = 0;
+    let tambah = 0, ubah = 0, hapus = 0;
     for (const op of ops) {
       const plat = String(op.plat == null ? '' : op.plat).trim(), shift = String(op.shift == null ? '' : op.shift).trim();
       if (op.op === 'ins') {
@@ -1087,6 +1087,10 @@ const API = {
         const id = 'LOG-' + uid8();
         const row = toDb('dailyLogs', { client, tanggal: tgl, plat, driver, shift, keterangan: 'Papan penugasan' }, id, true);
         must(await sb.from('daily_logs').insert(row).select('id')); tambah++;
+      } else if (op.op === 'del') {
+        if (!(c.canDel || (c.delTabs || []).indexOf('dailyLogs') >= 0)) throw new Error('Akun ini tidak boleh menghapus baris Rekap Harian. Minta Creator/Manager menyimpan perubahan ini, atau hapus baris yang berlebih lewat menu Rekap Harian.');
+        const d = must(await sb.from('daily_logs').delete().eq('id', op.id).select('id'));
+        if (d && d.length) { hapus++; if (String(op.id).indexOf('LOGA-') === 0) { try { await sb.from('log_skip').upsert({ id_log: op.id }, { onConflict: 'id_log', ignoreDuplicates: true }); } catch (e) { /* abaikan */ } } }
       } else if (op.op === 'upd') {
         const old = must(await sb.from('daily_logs').select('*').eq('id', op.id).maybeSingle());
         if (!old) throw new Error('Baris Rekap Harian tidak ditemukan (mungkin sudah dihapus). Muat ulang halaman.');
@@ -1099,8 +1103,8 @@ const API = {
         ubah++;
       }
     }
-    if (tambah + ubah) await syncSlipOnly_();
-    return { success: true, tambah, ubah, message: 'Papan penugasan tersimpan: ' + ubah + ' baris diubah, ' + tambah + ' ditambah.' };
+    if (tambah + ubah + hapus) await syncSlipOnly_();
+    return { success: true, tambah, ubah, hapus, message: 'Papan penugasan tersimpan: ' + ubah + ' baris diubah, ' + tambah + ' ditambah' + (hapus ? ', ' + hapus + ' dihapus' : '') + '.' };
   },
 
   async toggleUnit(id) {
@@ -1909,9 +1913,10 @@ function render() {
   $('btnSlipPv').classList.toggle('hidden', cur !== 'slip' || !CANPREV());
   const noExp = cur === 'beranda' || cur === 'papan' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
   $('opsBox').classList.add('hidden');
-  $('btnPdf').classList.toggle('hidden', noExp);
-  $('btnPv').classList.toggle('hidden', noExp || cur === 'slip' || cur === 'ccf'); // slip dan CCF punya tombol pratinjau sendiri
-  $('btnXls').classList.toggle('hidden', noExp);
+  const noExpBtn = noExp && cur !== 'papan';
+  $('btnPdf').classList.toggle('hidden', noExpBtn);
+  $('btnPv').classList.toggle('hidden', noExpBtn || cur === 'slip' || cur === 'ccf'); // slip dan CCF punya tombol pratinjau sendiri
+  $('btnXls').classList.toggle('hidden', noExpBtn);
   $('btnCcf').classList.toggle('hidden', cur !== 'ccf');
   $('btnCcfPv').classList.toggle('hidden', cur !== 'ccf');
   $('btnSwap').classList.toggle('hidden', !(DB.tabs || []).includes('drivers') || !CAN() || cur === 'beranda' || cur === 'papan');
@@ -2299,7 +2304,7 @@ function dailyConf() {
   const dup = {}, clash = {}, info = {};
   const add = (r, t, m) => { (info[r.id] = info[r.id] || []).push({ t, m }); };
   L.forEach(r => {
-    (dup[normNama(r.driver) + '|' + r.tanggal] = dup[normNama(r.driver) + '|' + r.tanggal] || []).push(r);
+    { const dk = normNama(r.driver) + '|' + r.tanggal + '|' + normShift(r.shift); (dup[dk] = dup[dk] || []).push(r); }
     if (normPlat(r.plat)) { const k = normPlat(r.plat) + '|' + r.tanggal + '|' + normShift(r.shift); (clash[k] = clash[k] || []).push(r); }
   });
   Object.values(dup).forEach(a => { if (a.length > 1) a.forEach(r => add(r, 'dup', 'Double: ' + r.driver + ' tercatat ' + a.length + 'x pada ' + fd(r.tanggal))); });
@@ -2312,7 +2317,7 @@ function dailyConf() {
 // Cek sebelum simpan: kembalikan teks peringatan (kosong = aman)
 function dailyCheck(o) {
   const other = (DB.dailyLogs || []).filter(r => r.id !== o.id), out = [];
-  const same = other.filter(r => r.tanggal === o.tanggal && normNama(r.driver) === normNama(o.driver));
+  const same = other.filter(r => r.tanggal === o.tanggal && normNama(r.driver) === normNama(o.driver) && normShift(r.shift) === normShift(o.shift));
   if (same.length) out.push('Driver "' + o.driver + '" sudah tercatat pada ' + fd(o.tanggal) + ' (' + same.map(r => r.plat + (r.shift ? ' / ' + r.shift : '')).join(', ') + ').');
   const clash = other.filter(r => r.tanggal === o.tanggal && normPlat(r.plat) === normPlat(o.plat) && normShift(r.shift) === normShift(o.shift) && normNama(r.driver) !== normNama(o.driver));
   if (clash.length && normPlat(o.plat)) out.push('Unit ' + o.plat + ' pada shift ' + (o.shift || '(kosong)') + ' tanggal ' + fd(o.tanggal) + ' sudah dibawa: ' + [...new Set(clash.map(r => r.driver))].join(', ') + '.');
@@ -2748,28 +2753,31 @@ function ppBuild() {
   Object.keys(P.draft).forEach(k => { const pk = k.split('|')[0]; if (!P.labels[pk]) P.labels[pk] = P.extraLbl && P.extraLbl[pk] || pk.toUpperCase(); });
   const slots = units.map(u => normPlat(u.plat));
   const extra = [...new Set(Object.keys(base).concat(Object.keys(P.draft)).map(k => k.split('|')[0]))].filter(pk => !slots.includes(pk)).sort();
-  return { units, extra, base, pool };
+  const inDraft = new Set(Object.values(P.draft).map(normNama));
+  return { units, extra, base, pool: pool.filter(r => !inDraft.has(normNama(r.driver))) };
 }
 function ppDiff() {
   const P = PAPAN, M = ppBuild(), base = M.base, dr = P.draft;
   const dayRows = (DB.dailyLogs || []).filter(r => r.tanggal === P.date);
-  const rowOf = n => dayRows.find(r => normNama(r.driver) === normNama(n) && r.client === P.client) || dayRows.find(r => normNama(r.driver) === normNama(n));
   const keys = [...new Set(Object.keys(base).concat(Object.keys(dr)))];
   const changed = keys.filter(k => (base[k] || '') !== (dr[k] || ''));
-  const ops = [], errs = [], touched = new Set(), placed = new Set(Object.values(dr).filter(Boolean).map(normNama));
-  const cnt = {}; Object.values(dr).filter(Boolean).forEach(n => { cnt[normNama(n)] = (cnt[normNama(n)] || 0) + 1; });
-  Object.keys(cnt).forEach(n => { if (cnt[n] > 1) errs.push('Driver "' + (Object.values(dr).find(x => normNama(x) === n)) + '" dipasang di ' + cnt[n] + ' kotak. Satu driver hanya boleh satu unit per hari.'); });
-  changed.forEach(k => {
-    const n = dr[k]; if (!n) return;
-    const [pk, sh] = k.split('|'), plat = P.labels[pk] || pk, r = rowOf(n);
-    if (r && r.client !== P.client) { errs.push(n + ' sudah tercatat di client lain pada tanggal ini (' + shortCl(r.client) + ').'); return; }
-    if (r) { if (!touched.has(r.id)) { touched.add(r.id); ops.push({ op: 'upd', id: r.id, plat, shift: sh }); } }
-    else ops.push({ op: 'ins', driver: n, plat, shift: sh });
-  });
-  changed.forEach(k => {
-    const b = base[k]; if (!b || placed.has(normNama(b))) return;
-    const r = rowOf(b); if (!r || touched.has(r.id)) return;
-    touched.add(r.id); ops.push({ op: 'upd', id: r.id, plat: '', shift: r.shift || '' });
+  const ops = [], errs = [];
+  // satu driver boleh memegang siang + malam, asal di unit yang sama
+  const by = {}; Object.keys(dr).forEach(k => { const n = dr[k]; if (n) (by[normNama(n)] = by[normNama(n)] || { name: n, cells: [] }).cells.push(k); });
+  Object.values(by).forEach(g => { const pks = [...new Set(g.cells.map(k => k.split('|')[0]))]; if (pks.length > 1) errs.push('Driver "' + g.name + '" dipasang di ' + pks.length + ' unit berbeda (' + pks.map(x => P.labels[x] || x).join(', ') + '). Satu driver hanya boleh satu unit per hari.'); });
+  const affected = new Set(); changed.forEach(k => { if (base[k]) affected.add(normNama(base[k])); if (dr[k]) affected.add(normNama(dr[k])); });
+  affected.forEach(n => {
+    const want = (by[n] ? by[n].cells : []).map(k => k.split('|')), name = by[n] ? by[n].name : (Object.values(base).find(x => normNama(x) === n) || n);
+    const rows = dayRows.filter(r => normNama(r.driver) === n);
+    if (rows.some(r => r.client !== P.client)) { errs.push(name + ' sudah tercatat di client lain pada tanggal ini (' + shortCl(rows.find(r => r.client !== P.client).client) + ').'); return; }
+    const used = new Set(), left = [];
+    const keep = [];
+    want.forEach(([pk, sh]) => { const r = rows.find(x => !used.has(x.id) && normPlat(x.plat) === pk && normShift(x.shift) === sh.toLowerCase()); if (r) { used.add(r.id); keep.push({ r, pk, sh }); } else left.push([pk, sh]); });
+    const spare = rows.filter(r => !used.has(r.id));
+    const multi = want.length > 1;
+    keep.forEach(({ r, pk, sh }) => { if (multi && String(r.id).indexOf('LOGA-') === 0) ops.push({ op: 'upd', id: r.id, plat: P.labels[pk] || pk, shift: sh }); }); // jadikan manual agar sinkron CCF tidak menghapusnya
+    left.forEach(([pk, sh]) => { const r = spare.shift(); const plat = P.labels[pk] || pk; if (r) ops.push({ op: 'upd', id: r.id, plat, shift: sh }); else ops.push({ op: 'ins', driver: name, plat, shift: sh }); });
+    spare.forEach((r, i) => { if (want.length || i > 0) ops.push({ op: 'del', id: r.id }); else ops.push({ op: 'upd', id: r.id, plat: '', shift: r.shift || '' }); });
   });
   return { ops, errs: [...new Set(errs)], changed };
 }
@@ -2783,8 +2791,8 @@ function renderPapan() {
   const lbl = k => { const [pk, sh] = k.split('|'); return (P.labels[pk] || pk) + ' (' + sh.toLowerCase() + ')'; };
   const sel = (pk, sh) => {
     const k = pk + '|' + sh, v = dr[k] || '', ch = (M.base[k] || '') !== v, names = drivers.includes(v) || !v ? drivers : drivers.concat([v]);
-    const dup = v && cntBy[normNama(v)].length > 1 ? cntBy[normNama(v)].filter(x => x !== k) : [];
-    return `<div><label class="text-[11px] text-slate-400 md:hidden">Shift ${sh.toLowerCase()}</label><select data-pp="${esc(k)}" ${can ? '' : 'disabled'} class="w-full bg-[#0b0e1a] border ${dup.length ? 'border-amber-400' : ch ? 'border-sky-400' : 'border-[#2b3150]'} rounded-lg p-2 text-sm"><option value="">- kosong -</option>${names.map(n => `<option value="${esc(n)}" ${normNama(n) === normNama(v) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${dup.length ? `<p class="text-[11px] text-amber-300 mt-1">&#9888; ${esc(v)} juga memegang ${esc(dup.map(lbl).join(', '))}</p>` : ''}</div>`;
+    const dup = v ? cntBy[normNama(v)].filter(x => x !== k && x.split('|')[0] !== pk) : [];
+    return `<div><label class="text-[11px] text-slate-400 md:hidden">Shift ${sh.toLowerCase()}</label><select data-pp="${esc(k)}" ${can ? '' : 'disabled'} class="w-full bg-[#0b0e1a] border ${dup.length ? 'border-amber-400' : ch ? 'border-sky-400' : 'border-[#2b3150]'} rounded-lg p-2 text-sm"><option value="">- kosong -</option>${names.map(n => `<option value="${esc(n)}" ${normNama(n) === normNama(v) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${dup.length ? `<p class="text-[11px] text-amber-300 mt-1">&#9888; ${esc(v)} juga memegang ${esc(dup.map(lbl).join(', '))} (satu driver hanya satu unit)</p>` : ''}</div>`;
   };
   const unitRow = (pk, plat, note) => `<div class="bcard !p-3 grid gap-2 md:grid-cols-[minmax(150px,1fr)_1fr_1fr] md:items-start"><div class="font-bold pt-1.5">${esc(plat)}${note ? `<span class="block text-[11px] font-normal text-slate-400">${esc(note)}</span>` : ''}</div>${sel(pk, 'Siang')}${sel(pk, 'Malam')}</div>`;
   const filled = sh => M.units.filter(u => dr[normPlat(u.plat) + '|' + sh]).length;
@@ -2795,7 +2803,7 @@ function renderPapan() {
       <div class="flex items-end gap-1"><button type="button" id="ppPrev" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5" aria-label="Hari sebelumnya">&lsaquo;</button><label class="block"><span class="text-xs text-slate-400">Tanggal</span><input id="ppDate" type="date" value="${esc(P.date)}" class="block bg-[#0b0e1a] border border-[#2b3150] rounded-lg p-2 text-sm"></label><button type="button" id="ppNext" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5" aria-label="Hari berikutnya">&rsaquo;</button><button type="button" id="ppToday" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5 text-sm">Hari ini</button></div>
       ${can ? `<button type="button" id="ppCopy" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5 text-sm ${prevCount ? '' : 'opacity-50'}" title="Isi papan dengan susunan ${esc(fd(prev))}">Salin penugasan kemarin${prevCount ? ' (' + prevCount + ')' : ''}</button>` : ''}
     </div>
-    <p class="text-xs text-slate-400">${esc(fd(P.date))} &middot; ${M.units.length} unit aktif &middot; siang terisi ${filled('Siang')}, malam terisi ${filled('Malam')}. Mengosongkan kotak = driver tetap tercatat bertugas, tapi tanpa unit.</p>
+    <p class="text-xs text-slate-400">${esc(fd(P.date))} &middot; ${M.units.length} unit aktif &middot; siang terisi ${filled('Siang')}, malam terisi ${filled('Malam')}. Satu driver boleh memegang siang dan malam di unit yang sama. Mengosongkan kotak = driver tetap tercatat bertugas, tapi tanpa unit.</p>
     <div class="hidden md:grid grid-cols-[minmax(150px,1fr)_1fr_1fr] gap-2 px-3 text-xs text-slate-400"><span>Unit</span><span>Shift siang</span><span>Shift malam</span></div>
     ${M.units.map(u => unitRow(normPlat(u.plat), u.plat)).join('') || '<p class="text-slate-400 text-sm">Client ini belum punya unit aktif.</p>'}
     ${M.extra.map(pk => unitRow(pk, P.labels[pk] || pk, 'di luar Master Unit')).join('')}
@@ -2929,6 +2937,14 @@ function exportData() {
   const co = DB.settings.COMPANY_NAME || '';
   if (cfx && cfx !== 'ALL') info.push('Client: ' + cfx);
 
+  if (cur === 'papan') {
+    const P = PAPAN, M = ppBuild(), dr = P.draft;
+    const row = (pk, plat) => [plat, dr[pk + '|Siang'] || '-', dr[pk + '|Malam'] || '-'];
+    const rows = M.units.map(u => row(normPlat(u.plat), u.plat)).concat(M.extra.map(pk => row(pk, (P.labels[pk] || pk) + ' (di luar Master Unit)')));
+    M.pool.forEach(r => rows.push(['Tanpa unit/shift', r.driver, '']));
+    info.length = 0; info.push('Client: ' + P.client, 'Tanggal: ' + fd(P.date));
+    return { title: t.t, info: info.join('  |  '), head: ['Unit', 'Shift Siang', 'Shift Malam'], rows, stamp, file: ('Papan_Penugasan_' + shortCl(P.client) + '_' + P.date).replace(/[^\w\-]+/g, '_'), sections: null, recap: null, landscape: false };
+  }
   if (cur === 'timesheet') {
     const m = tsModel(), nd = m.days.length;
     info.push(m.label.toLowerCase().replace(/^periode/, 'Periode'));
