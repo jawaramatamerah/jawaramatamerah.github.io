@@ -996,6 +996,7 @@ const API = {
     const tabs = c.tabs.slice();
     if (tabs.indexOf('beranda') < 0) tabs.push('beranda'); // halaman Ringkasan tersedia untuk semua akun
     if (['invoice', 'pengeluaran', 'slip'].every(k => tabs.indexOf(k) >= 0)) tabs.push('rekaplaba'); // menu hitungan (tanpa tabel sendiri): butuh akses invoice, pengeluaran, dan slip
+    if (['dailyLogs', 'units', 'drivers'].every(k => tabs.indexOf(k) >= 0)) tabs.push('papan'); // Papan Penugasan Harian: tulis ke Rekap Harian, butuh juga Master Unit dan Master Driver
     if (tabs.indexOf('dailyLogs') >= 0 && LAST_SYNC !== todayIso_()) { await syncDaily_(); LAST_SYNC = todayIso_(); }
     if (tabs.indexOf('invoice') >= 0 && LAST_INV !== todayIso_()) { try { await sb.rpc('app_sync_invoice'); } catch (e) { /* abaikan */ } LAST_INV = todayIso_(); } // invoice EPI bulanan
     if (tabs.indexOf('slip') >= 0 && LAST_SLIP !== todayIso_()) { try { await sb.rpc('app_sync_slip'); } catch (e) { /* abaikan */ } LAST_SLIP = todayIso_(); } // slip bulan lalu + bulan ini ikut timesheet // Rekap Harian hari ini ikut terisi dari CCF
@@ -1069,6 +1070,37 @@ const API = {
     else if (k === 'dailyLogs') await syncSlipOnly_();
     if (k === 'bast') await syncUnitBast_(old.client, old.plat);
     return { success: true, message: 'Data berhasil dihapus.' };
+  },
+
+  // Papan Penugasan Harian: simpan banyak perubahan (ganti unit/shift/driver) sekaligus ke Rekap Harian, lalu satu kali sinkron slip
+  async saveBoard(date, client, ops) {
+    const c = await me_();
+    if (c.tabs.indexOf('dailyLogs') < 0) throw denied();
+    const tgl = toIso_(date);
+    if (!tgl) throw new Error('Tanggal tidak valid.');
+    ops = Array.isArray(ops) ? ops : [];
+    let tambah = 0, ubah = 0;
+    for (const op of ops) {
+      const plat = String(op.plat == null ? '' : op.plat).trim(), shift = String(op.shift == null ? '' : op.shift).trim();
+      if (op.op === 'ins') {
+        const driver = String(op.driver || '').trim(); if (!driver) continue;
+        const id = 'LOG-' + uid8();
+        const row = toDb('dailyLogs', { client, tanggal: tgl, plat, driver, shift, keterangan: 'Papan penugasan' }, id, true);
+        must(await sb.from('daily_logs').insert(row).select('id')); tambah++;
+      } else if (op.op === 'upd') {
+        const old = must(await sb.from('daily_logs').select('*').eq('id', op.id).maybeSingle());
+        if (!old) throw new Error('Baris Rekap Harian tidak ditemukan (mungkin sudah dihapus). Muat ulang halaman.');
+        const wasAuto = String(old.id).indexOf('LOGA-') === 0, newId = wasAuto ? 'LOG-' + uid8() : old.id;
+        const row = toDb('dailyLogs', { client: old.client, tanggal: old.tanggal, plat, driver: old.driver, shift, keterangan: 'Papan penugasan' }, newId, false);
+        if (wasAuto) { row.id = newId; await sb.from('log_skip').upsert({ id_log: old.id }, { onConflict: 'id_log', ignoreDuplicates: true }); }
+        else delete row.id;
+        const d = must(await sb.from('daily_logs').update(row).eq('id', old.id).select('id'));
+        if (!d || !d.length) throw new Error('Perubahan ditolak: Anda tidak punya izin mengubah baris ini.');
+        ubah++;
+      }
+    }
+    if (tambah + ubah) await syncSlipOnly_();
+    return { success: true, tambah, ubah, message: 'Papan penugasan tersimpan: ' + ubah + ' baris diubah, ' + tambah + ' ditambah.' };
   },
 
   async toggleUnit(id) {
@@ -1450,6 +1482,7 @@ const TABS = [
     cols:[['noTrx','No. Transaksi'],['tanggal','Tanggal',r=>fd(r.tanggal)],['client','Client',r=>esc(r.client)||'-'],['kategori','Kategori',r=>badge(r.kategori||'-','bg-emerald-600/20 text-emerald-300')],['sumber','Sumber'],['uraian','Keterangan'],['nominal','Nominal',r=>`<b class="${r.status==='Dibatalkan'?'text-slate-400 line-through':'text-emerald-300'}">${rp(r.nominal)}</b>`],['metode','Metode'],['rekening','Rekening / Kas'],['noRef','No. Ref'],['status','Status',r=>badge(r.status||'Valid',r.status==='Dibatalkan'?'bg-red-600/30 text-red-300':'bg-emerald-600/30 text-emerald-300')]],
     form:[['tanggal','Tanggal','date',1],['sumber','Sumber pemasukan','text',1],['kategori','Kategori','kat',1],['client','Client (opsional)','clientopt'],['uraian','Keterangan','textarea'],['nominal','Nominal (Rp)','number',1],['metode','Metode pembayaran','select:Transfer Bank|Tunai|Cek / Giro|E-Wallet|Lainnya'],['rekening','Rekening / kas tujuan'],['noRef','Nomor referensi (opsional)'],['status','Status','select:Valid|Dibatalkan']] },
   { k:'rekaplaba', l:'Rekap Keuntungan', t:'Rekapitulasi Keuntungan Per Client', i:'dollar', rng:1, dlabel:'Periode', ph:'Cari client...' },
+  { k:'papan', l:'Papan Penugasan', t:'Papan Penugasan Harian', i:'grid' },
   { k:'rekapgaji', l:'Rekap Gaji', t:'Rekapitulasi Gaji Personel Per Client', i:'wallet', rng:1, xf:['periode'], dlabel:'Periode gaji', ph:'Cari nama, posisi, client...' },
   { k:'pengeluaran', l:'Pengeluaran', t:'Tabel Pengeluaran Biaya Operasional', i:'receipt', r:1, ph:'Cari kategori, uraian, plat...', date:'tanggal',
     cols:[['client','Client'],['tanggal','Tanggal',r=>fd(r.tanggal)],['kategori','Kategori',r=>badge(r.kategori||'-','bg-rose-600/20 text-rose-300')],['uraian','Uraian'],['plat','Plat'],['nominal','Nominal',r=>`<b class="text-rose-300">${rp(r.nominal)}</b>`],['keterangan','Keterangan']],
@@ -1745,7 +1778,7 @@ function renderOps(rows) {
 const DETAIL_TABS = ['po', 'penawaran', 'kontrak', 'pemasukan', 'kategori'];
 let ATT_LM = '', BK_CACHE = null;
 
-const isSpecial = () => cur === 'beranda' || cur === 'matrix' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
+const isSpecial = () => cur === 'beranda' || cur === 'papan' || cur === 'matrix' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
 const visibleTabs = () => TABS.filter(t => (DB.tabs || []).includes(t.k)); // hak akses ditentukan server menurut peran
 
 /* ---------- Tampilan ---------- */
@@ -1765,7 +1798,7 @@ function renderChrome() {
   // Sidebar: satu navigasi, dikelompokkan (isi dari MENUS + menu sistem); hanya menu yang diizinkan peran
   const okKeys = visibleTabs().map(t => t.k);
   const addKeys = new Set(MENUS.flatMap(g => g[3].map(x => x[0])));
-  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).flatMap(k => k === 'timesheet' ? [k, 'rekapgaji'] : [k]).concat(name === 'Keuangan & SDM' ? ['rekaplaba'] : [])])
+  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).flatMap(k => k === 'timesheet' ? [k, 'rekapgaji'] : k === 'dailyLogs' ? [k, 'papan'] : [k]).concat(name === 'Keuangan & SDM' ? ['rekaplaba'] : [])])
     .concat([['Sistem', ['backup', 'pengaturan', 'users']]]);
   const mkRow = k => {
     const t = TABS.find(x => x.k === k); if (!t) return '';
@@ -1874,14 +1907,14 @@ function render() {
   $('btnSlipTs').classList.toggle('hidden', !['slip', 'rekapgaji', 'timesheet'].includes(cur) || !CAN());
   $('btnAll').classList.toggle('hidden', cur !== 'slip' || !ISC());
   $('btnSlipPv').classList.toggle('hidden', cur !== 'slip' || !CANPREV());
-  const noExp = cur === 'beranda' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
+  const noExp = cur === 'beranda' || cur === 'papan' || cur === 'pengaturan' || cur === 'users' || cur === 'backup';
   $('opsBox').classList.add('hidden');
   $('btnPdf').classList.toggle('hidden', noExp);
   $('btnPv').classList.toggle('hidden', noExp || cur === 'slip' || cur === 'ccf'); // slip dan CCF punya tombol pratinjau sendiri
   $('btnXls').classList.toggle('hidden', noExp);
   $('btnCcf').classList.toggle('hidden', cur !== 'ccf');
   $('btnCcfPv').classList.toggle('hidden', cur !== 'ccf');
-  $('btnSwap').classList.toggle('hidden', !(DB.tabs || []).includes('drivers') || !CAN() || cur === 'beranda');
+  $('btnSwap').classList.toggle('hidden', !(DB.tabs || []).includes('drivers') || !CAN() || cur === 'beranda' || cur === 'papan');
   $('filters').classList.toggle('hidden', noExp);
   renderXf();
   $('q').placeholder = t.ph || 'Cari...';
@@ -1894,6 +1927,7 @@ function render() {
   $('km').classList.toggle('hidden', cur !== 'kontrak');
   if (cur === 'timesheet' && !$('d1').value && !$('d2').value) applyPreset('bulan');
   if (cur === 'beranda') return renderBeranda();
+  if (cur === 'papan') { $('count').textContent = ''; return renderPapan(); }
   if (cur === 'backup') { $('count').textContent = ''; return renderBackup(); }
   if (cur === 'matrix') { $('q').placeholder = 'Cari nama driver...'; return renderMatrix(); }
   if (cur === 'pengaturan') { $('count').textContent = ''; return renderSettings(); }
@@ -2685,6 +2719,113 @@ const rlPct = v => v == null ? '-' : v.toFixed(1).replace('.', ',') + '%';
 const RL_HEAD = ['Client', 'Pendapatan (Invoice)', 'Invoice Lunas', 'Pengeluaran', 'Beban Gaji', 'Total Beban', 'Keuntungan', 'Margin', 'Keuntungan Kas (Lunas)'];
 const rlRow = x => [x.client, rp(x.tagih), rp(x.lunas), rp(x.peng), rp(x.gaji), rp(x.beban), rp(x.laba), rlPct(x.margin), rp(x.kas)];
 const RL_NOTE = 'Pendapatan = nilai invoice sebelum PPN (menurut tanggal tagihan). Pengeluaran = menu Pengeluaran (kategori Gaji tidak dihitung karena gaji diambil dari Slip Gaji). Beban Gaji = gaji kotor + BPJS perusahaan dari Slip Gaji. Keuntungan = Pendapatan - Total Beban. Keuntungan Kas = Invoice Lunas - Total Beban.';
+/* ---------- Papan Penugasan Harian: ganti siapa membawa unit mana (siang/malam) dalam satu layar, simpan sekaligus ke Rekap Harian ---------- */
+const PAPAN = { date: '', client: '', draft: null, labels: {} };
+const PP_SH = ['Siang', 'Malam'];
+const ppIso = d => new Date(d + 'T00:00:00Z').toISOString().slice(0, 10);
+const ppAdd = (d, n) => new Date(new Date(d + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
+const ppClients = () => [...new Set((DB.units || []).filter(u => u.status === 'Aktif').map(u => u.client).filter(Boolean))].sort();
+function ppBuild() {
+  const P = PAPAN;
+  if (!P.date) P.date = today();
+  const cls = ppClients();
+  if (!P.client || !cls.includes(P.client)) { const sv = lsGet('ppClient'); P.client = cls.includes(sv) ? sv : (cls[0] || ''); P.draft = null; }
+  const units = (DB.units || []).filter(u => u.client === P.client && u.status === 'Aktif').sort((a, b) => String(a.plat).localeCompare(String(b.plat), undefined, { numeric: true }));
+  const rows = (DB.dailyLogs || []).filter(r => r.tanggal === P.date && r.client === P.client);
+  const base = {}, pool = [];
+  P.labels = {};
+  units.forEach(u => { P.labels[normPlat(u.plat)] = u.plat; });
+  rows.forEach(r => {
+    const pk = normPlat(r.plat);
+    if (!pk) { pool.push(r); return; }
+    let sh = normShift(r.shift) === 'malam' ? 'Malam' : normShift(r.shift) === 'siang' ? 'Siang' : '';
+    if (!sh) sh = base[pk + '|Siang'] ? 'Malam' : 'Siang';
+    if (base[pk + '|' + sh]) { pool.push(r); return; }
+    base[pk + '|' + sh] = r.driver;
+    if (!P.labels[pk]) P.labels[pk] = r.plat;
+  });
+  if (!P.draft) P.draft = Object.assign({}, base);
+  Object.keys(P.draft).forEach(k => { const pk = k.split('|')[0]; if (!P.labels[pk]) P.labels[pk] = P.extraLbl && P.extraLbl[pk] || pk.toUpperCase(); });
+  const slots = units.map(u => normPlat(u.plat));
+  const extra = [...new Set(Object.keys(base).concat(Object.keys(P.draft)).map(k => k.split('|')[0]))].filter(pk => !slots.includes(pk)).sort();
+  return { units, extra, base, pool };
+}
+function ppDiff() {
+  const P = PAPAN, M = ppBuild(), base = M.base, dr = P.draft;
+  const dayRows = (DB.dailyLogs || []).filter(r => r.tanggal === P.date);
+  const rowOf = n => dayRows.find(r => normNama(r.driver) === normNama(n) && r.client === P.client) || dayRows.find(r => normNama(r.driver) === normNama(n));
+  const keys = [...new Set(Object.keys(base).concat(Object.keys(dr)))];
+  const changed = keys.filter(k => (base[k] || '') !== (dr[k] || ''));
+  const ops = [], errs = [], touched = new Set(), placed = new Set(Object.values(dr).filter(Boolean).map(normNama));
+  const cnt = {}; Object.values(dr).filter(Boolean).forEach(n => { cnt[normNama(n)] = (cnt[normNama(n)] || 0) + 1; });
+  Object.keys(cnt).forEach(n => { if (cnt[n] > 1) errs.push('Driver "' + (Object.values(dr).find(x => normNama(x) === n)) + '" dipasang di ' + cnt[n] + ' kotak. Satu driver hanya boleh satu unit per hari.'); });
+  changed.forEach(k => {
+    const n = dr[k]; if (!n) return;
+    const [pk, sh] = k.split('|'), plat = P.labels[pk] || pk, r = rowOf(n);
+    if (r && r.client !== P.client) { errs.push(n + ' sudah tercatat di client lain pada tanggal ini (' + shortCl(r.client) + ').'); return; }
+    if (r) { if (!touched.has(r.id)) { touched.add(r.id); ops.push({ op: 'upd', id: r.id, plat, shift: sh }); } }
+    else ops.push({ op: 'ins', driver: n, plat, shift: sh });
+  });
+  changed.forEach(k => {
+    const b = base[k]; if (!b || placed.has(normNama(b))) return;
+    const r = rowOf(b); if (!r || touched.has(r.id)) return;
+    touched.add(r.id); ops.push({ op: 'upd', id: r.id, plat: '', shift: r.shift || '' });
+  });
+  return { ops, errs: [...new Set(errs)], changed };
+}
+function ppGuard() { return !ppDiff().changed.length || confirm('Ada perubahan papan yang belum disimpan. Buang perubahan ini?'); }
+function renderPapan() {
+  const P = PAPAN, cls = ppClients();
+  if (!cls.length) { $('view').innerHTML = '<p class="p-10 text-center text-slate-400">Belum ada Master Unit berstatus Aktif. Isi Master Unit dulu, lalu buka papan ini lagi.</p>'; return; }
+  const M = ppBuild(), D = ppDiff(), dr = P.draft, can = CAN();
+  const drivers = [...new Set((DB.drivers || []).filter(d => d.client === P.client).map(d => d.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const cntBy = {}; Object.keys(dr).forEach(k => { if (dr[k]) (cntBy[normNama(dr[k])] = cntBy[normNama(dr[k])] || []).push(k); });
+  const lbl = k => { const [pk, sh] = k.split('|'); return (P.labels[pk] || pk) + ' (' + sh.toLowerCase() + ')'; };
+  const sel = (pk, sh) => {
+    const k = pk + '|' + sh, v = dr[k] || '', ch = (M.base[k] || '') !== v, names = drivers.includes(v) || !v ? drivers : drivers.concat([v]);
+    const dup = v && cntBy[normNama(v)].length > 1 ? cntBy[normNama(v)].filter(x => x !== k) : [];
+    return `<div><label class="text-[11px] text-slate-400 md:hidden">Shift ${sh.toLowerCase()}</label><select data-pp="${esc(k)}" ${can ? '' : 'disabled'} class="w-full bg-[#0b0e1a] border ${dup.length ? 'border-amber-400' : ch ? 'border-sky-400' : 'border-[#2b3150]'} rounded-lg p-2 text-sm"><option value="">- kosong -</option>${names.map(n => `<option value="${esc(n)}" ${normNama(n) === normNama(v) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${dup.length ? `<p class="text-[11px] text-amber-300 mt-1">&#9888; ${esc(v)} juga memegang ${esc(dup.map(lbl).join(', '))}</p>` : ''}</div>`;
+  };
+  const unitRow = (pk, plat, note) => `<div class="bcard !p-3 grid gap-2 md:grid-cols-[minmax(150px,1fr)_1fr_1fr] md:items-start"><div class="font-bold pt-1.5">${esc(plat)}${note ? `<span class="block text-[11px] font-normal text-slate-400">${esc(note)}</span>` : ''}</div>${sel(pk, 'Siang')}${sel(pk, 'Malam')}</div>`;
+  const filled = sh => M.units.filter(u => dr[normPlat(u.plat) + '|' + sh]).length;
+  const prev = ppAdd(P.date, -1), prevCount = (DB.dailyLogs || []).filter(r => r.tanggal === prev && r.client === P.client && normPlat(r.plat)).length;
+  $('view').innerHTML = `<div class="p-4 space-y-3 max-w-4xl">
+    <div class="flex flex-wrap items-end gap-2">
+      <label class="block"><span class="text-xs text-slate-400">Client</span><select id="ppCl" class="block bg-[#0b0e1a] border border-[#2b3150] rounded-lg p-2 text-sm">${cls.map(c => `<option ${c === P.client ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+      <div class="flex items-end gap-1"><button type="button" id="ppPrev" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5" aria-label="Hari sebelumnya">&lsaquo;</button><label class="block"><span class="text-xs text-slate-400">Tanggal</span><input id="ppDate" type="date" value="${esc(P.date)}" class="block bg-[#0b0e1a] border border-[#2b3150] rounded-lg p-2 text-sm"></label><button type="button" id="ppNext" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5" aria-label="Hari berikutnya">&rsaquo;</button><button type="button" id="ppToday" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5 text-sm">Hari ini</button></div>
+      ${can ? `<button type="button" id="ppCopy" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5 text-sm ${prevCount ? '' : 'opacity-50'}" title="Isi papan dengan susunan ${esc(fd(prev))}">Salin penugasan kemarin${prevCount ? ' (' + prevCount + ')' : ''}</button>` : ''}
+    </div>
+    <p class="text-xs text-slate-400">${esc(fd(P.date))} &middot; ${M.units.length} unit aktif &middot; siang terisi ${filled('Siang')}, malam terisi ${filled('Malam')}. Mengosongkan kotak = driver tetap tercatat bertugas, tapi tanpa unit.</p>
+    <div class="hidden md:grid grid-cols-[minmax(150px,1fr)_1fr_1fr] gap-2 px-3 text-xs text-slate-400"><span>Unit</span><span>Shift siang</span><span>Shift malam</span></div>
+    ${M.units.map(u => unitRow(normPlat(u.plat), u.plat)).join('') || '<p class="text-slate-400 text-sm">Client ini belum punya unit aktif.</p>'}
+    ${M.extra.map(pk => unitRow(pk, P.labels[pk] || pk, 'di luar Master Unit')).join('')}
+    ${M.pool.length ? `<div class="bcard !p-3"><p class="text-xs text-slate-400 mb-2">Bertugas hari ini tapi belum punya unit/shift di papan (pilih namanya di kotak unit untuk menempatkan):</p><div class="flex flex-wrap gap-1.5">${M.pool.map(r => `<span class="px-2 py-1 rounded-full bg-white/5 text-xs">${esc(r.driver)}${r.plat ? ' &middot; ' + esc(r.plat) : ''}</span>`).join('')}</div></div>` : ''}
+    ${D.errs.length ? `<div class="rounded-lg border border-amber-400/50 bg-amber-500/10 p-3 text-sm text-amber-200">${D.errs.map(e => '&#9888; ' + esc(e)).join('<br>')}</div>` : ''}
+    ${can ? `<div class="sticky bottom-14 md:bottom-2 flex flex-wrap items-center gap-2 bg-[#0b0e1a]/90 backdrop-blur rounded-xl border border-[#2b3150] p-3"><button type="button" id="ppSave" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 font-bold text-white ${D.changed.length && !D.errs.length ? '' : 'opacity-50 pointer-events-none'}">Simpan penugasan</button><button type="button" id="ppReset" class="px-3 py-2 rounded-lg border border-[#2b3150] hover:bg-white/5 text-sm ${D.changed.length ? '' : 'hidden'}">Batalkan perubahan</button><span class="text-xs ${D.changed.length ? 'text-sky-300' : 'text-slate-400'}">${D.changed.length ? D.changed.length + ' kotak berubah, belum disimpan' : 'Tidak ada perubahan'}</span></div>` : ''}
+  </div>`;
+  $('view').querySelectorAll('[data-pp]').forEach(s => { s.onchange = () => { if (s.value) P.draft[s.dataset.pp] = s.value; else delete P.draft[s.dataset.pp]; renderPapan(); }; });
+  const go = fn => () => { if (!ppGuard()) return; fn(); P.draft = null; renderPapan(); };
+  $('ppCl').onchange = e => { if (!ppGuard()) { e.target.value = P.client; return; } P.client = e.target.value; lsSet('ppClient', P.client); P.draft = null; renderPapan(); };
+  $('ppDate').onchange = e => { if (!ppGuard()) { e.target.value = P.date; return; } if (e.target.value) P.date = e.target.value; P.draft = null; renderPapan(); };
+  $('ppPrev').onclick = go(() => { P.date = ppAdd(P.date, -1); });
+  $('ppNext').onclick = go(() => { P.date = ppAdd(P.date, 1); });
+  $('ppToday').onclick = go(() => { P.date = today(); });
+  if ($('ppReset')) $('ppReset').onclick = () => { P.draft = null; renderPapan(); };
+  if ($('ppCopy')) $('ppCopy').onclick = () => {
+    const src = (DB.dailyLogs || []).filter(r => r.tanggal === prev && r.client === P.client && normPlat(r.plat) && normShift(r.shift)), nd = {}, ex = {};
+    src.forEach(r => { const pk = normPlat(r.plat), k = pk + '|' + (normShift(r.shift) === 'malam' ? 'Malam' : 'Siang'); if (!nd[k]) { nd[k] = r.driver; ex[pk] = r.plat; } });
+    if (!Object.keys(nd).length) return toast('Kemarin (' + fd(prev) + ') belum ada penugasan lengkap (unit + shift) untuk client ini.', true);
+    P.extraLbl = ex; P.draft = nd; renderPapan();
+    toast('Disalin dari ' + fd(prev) + ' (' + Object.keys(nd).length + ' kotak). Periksa lalu klik Simpan penugasan.');
+  };
+  if ($('ppSave')) $('ppSave').onclick = async () => {
+    const d = ppDiff(); if (!d.ops.length || d.errs.length) return;
+    const b = $('ppSave'); b.classList.add('opacity-50', 'pointer-events-none'); b.textContent = 'Menyimpan...';
+    try { const r = await call('saveBoard', P.date, P.client, d.ops); toast(r.message || 'Penugasan tersimpan.'); P.draft = null; await load(); }
+    catch (e) { toast(e.message || String(e), true); renderPapan(); }
+  };
+}
+
 function renderRekapLaba() {
   const m = rlModel();
   $('count').textContent = '(' + m.rows.length + ' client) - Total Keuntungan ' + rp(m.tot.laba);
@@ -4406,7 +4547,7 @@ $('view').addEventListener('click', e => { const b = e.target.closest('button[da
     if (mb) { const box = mb.parentElement.querySelector('.more'); const o = box.classList.toggle('hidden'); mb.textContent = o ? 'Detail ▾' : 'Tutup ▴'; }
   });
 
-  const GROUP_OF = k => { for (const [name, , , items] of MENUS) if (items.some(x => x[0] === k)) return name; return k === 'rekapgaji' ? 'Operasional' : k === 'rekaplaba' ? 'Keuangan & SDM' : k === 'beranda' ? 'Utama' : 'Sistem'; };
+  const GROUP_OF = k => { for (const [name, , , items] of MENUS) if (items.some(x => x[0] === k)) return name; return k === 'rekapgaji' || k === 'papan' ? 'Operasional' : k === 'rekaplaba' ? 'Keuangan & SDM' : k === 'beranda' ? 'Utama' : 'Sistem'; };
   const ICO = {
     'Ubah': 'pencil', 'Hapus': 'trash', 'Ganti status': 'refresh', 'Pratinjau': 'eye', 'Preview PDF': 'eye', 'Cetak PDF': 'printer', 'Detail': 'filelist', 'Lampiran': 'clip'
   };
