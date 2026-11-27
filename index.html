@@ -684,9 +684,11 @@ async function prep_(k, o, id) {
     if (plat) {
       const pn = v => String(v).toLowerCase().replace(/\s+/g, '');
       const u = units.find(x => pn(x.plat) === pn(plat) && String(x.client).trim() === cl);
-      if (!u) throw new Error('Plat "' + plat + '" belum terdaftar di Master Unit untuk client ini. Tambahkan dulu di Master Data > Tambah Unit.');
-      if (!demob && u.status !== 'Aktif') throw new Error('Unit ' + u.plat + ' berstatus Tidak Aktif.');
-      o.plat = u.plat; o.unitId = u.id;
+      if (!u) { o.plat = plat; o.unitId = ''; } // plat isi manual (belum ada di Master Unit client ini) tetap diterima
+      else {
+        if (!demob && u.status !== 'Aktif') throw new Error('Unit ' + u.plat + ' berstatus Tidak Aktif.');
+        o.plat = u.plat; o.unitId = u.id;
+      }
     } else if (!demob) throw new Error('Unit kendaraan wajib dipilih untuk Mobilization (driver ini belum punya riwayat unit di Rekap Harian).');
     else {
       const prev = ccfAll.filter(x => x.id !== id && normNama_(x.name) === nn && !/^demob/i.test(String(x.tipe || '').trim()) && x.plat && x.date <= dt).sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -1325,7 +1327,7 @@ const TABS = [
     form:[['client','Client','client',1],['tanggal','Tanggal','date',1],['kategori','Kategori','select:Bahan Bakar (BBM)|Tol & Parkir|Gaji & Tunjangan|Perawatan & Servis Kendaraan|Sparepart & Ban|Sewa Unit / Alat|Akomodasi & Mess|Konsumsi|Pajak & Perizinan Kendaraan|Asuransi|Administrasi & Kantor|Transportasi & Perjalanan Dinas|Lain-lain',1],['uraian','Uraian pengeluaran'],['plat','Plat kendaraan (kalau terkait unit)','unit'],['nominal','Nominal (Rp)','number',1],['keterangan','Keterangan','textarea']] },
   { k:'ccf', l:'CCF Medco', t:'Tabel CCF Medco (Mobilisasi / Demobilisasi)', i:'file', date:'date', xf:['periode'],
     cols:[['tipe','Tipe',r=>badge(r.tipe||'-',isDemob(r)?'bg-amber-500/20 text-amber-300':'bg-emerald-600/30 text-emerald-300')],['no','No'],['client','Client'],['name','Nama'],['plat','Plat Nomor Kendaraan',r=>esc(r.plat)||ccfUnitAuto(r)],['shift','Shift',r=>isDemob(r)?'-':(r.shift?esc(r.shift):ccfShiftAuto(r))],['roster','Roster',r=>ccfRoster(r)],['periode','Periode'],['ptsId','PTS-ID'],['company','Company'],['jobTitle','Job Title'],['departure','Departure'],['destination','Destination'],['date','Tanggal',r=>fd(r.date)],['departemen','Departemen']],
-    form:[['client','Client','client',1],['tipe','Tipe','select:Mobilization|Demobilization'],['no','No','number'],['name','Nama driver (dari Driver Master)','driver',1],['plat','Plat unit (dari Master Unit)','unit'],['shift','Shift (Siang / Malam)','select:|Siang|Malam'],['ptsId','PTS-ID'],['company','Company'],['jobTitle','Job title'],['departure','Departure (otomatis: Mobilization = Macang Sakti, Demobilization = Suban; bisa pilih lain atau isi manual)','dep'],['destination','Destination'],['date','Tanggal mobilisasi / demobilisasi','date',1],['departemen','Departemen'],['note','Note'],['costCenter','Cost center']] },
+    form:[['client','Client','client',1],['tipe','Tipe','select:Mobilization|Demobilization'],['no','No','number'],['name','Nama driver (dari Driver Master)','driver',1],['plat','Plat unit (pilih dari Master Unit, atau isi manual)','unitman'],['shift','Shift (Siang / Malam)','select:|Siang|Malam'],['ptsId','PTS-ID'],['company','Company'],['jobTitle','Job title'],['departure','Departure (otomatis: Mobilization = Macang Sakti, Demobilization = Suban; bisa pilih lain atau isi manual)','dep'],['destination','Destination'],['date','Tanggal mobilisasi / demobilisasi','date',1],['departemen','Departemen'],['note','Note'],['costCenter','Cost center']] },
   { k:'units', l:'Master Unit', t:'Tabel Master Unit Kendaraan', i:'truck', dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input', ph:'Cari plat, client, No. BAST...',
     cols:[['client','Client'],['plat','Plat'],['statusInspeksi','Status Inspeksi',r=>esc(r.statusInspeksi)||'-'],['keterangan','No. BAST',r=>esc(r.keterangan)||'-'],['pemilik','PEMILIK',r=>esc(r.pemilik)||'-'],['status','Status',r=>badge(r.status,r.status==='Aktif'?'bg-emerald-600/30 text-emerald-300':'bg-slate-600/40 text-slate-300')]],
     form:[['client','Client','client',1],['plat','Plat kendaraan','text',1],['statusInspeksi','Status Inspeksi'],['keterangan','No. BAST','bast'],['pemilik','Pemilik unit','text'],['status','Status','select:Aktif|Tidak Aktif']] },
@@ -1870,6 +1872,9 @@ function openForm(row) {
       const names = DB.clients.map(c => c.nama), man = v && !names.includes(v);
       inp = `<select data-cm class="${cls}">${ty === 'clientopt' ? '<option value="">- tanpa client -</option>' : ''}${names.map(n => `<option ${n === v ? 'selected' : ''}>${esc(n)}</option>`).join('')}<option value="__manual" ${man ? 'selected' : ''}>Isi manual...</option></select><input name="${k}" data-cmi ${rq} value="${esc(v)}" placeholder="Ketik nama client" class="${cls} mt-2 ${man ? '' : 'hidden'}">`;
     }
+    else if (ty === 'unitman') { // plat: pilih dari Master Unit client, atau isi manual (daftar diisi ccf block)
+      inp = `<select id="platSel" class="${cls}"><option value=""></option></select><input name="${k}" id="platTxt" value="${esc(v)}" placeholder="Ketik plat kendaraan" class="${cls} mt-2 hidden">`;
+    }
     else if (ty === 'dep') {
       const hit = DEP_OPTS.find(o => o.toLowerCase() === String(v).trim().toLowerCase()), man = v && !hit;
       inp = `<select id="depSel" class="${cls}"><option value=""></option>${DEP_OPTS.map(o => `<option ${o === hit ? 'selected' : ''}>${esc(o)}</option>`).join('')}<option value="__manual" ${man ? 'selected' : ''}>Isi manual...</option></select><input name="${k}" id="depTxt" value="${esc(hit || v)}" placeholder="Ketik nama tempat" class="${cls} ${man ? '' : 'hidden'}">`;
@@ -1992,12 +1997,18 @@ function openForm(row) {
   // CCF: driver dan unit mengikuti Master Data (per client); PTS-ID, Company, dan plat unit terisi otomatis
   if (cur === 'ccf') {
     const f = $('mf');
+    const platSel = $('platSel'), platTxt = $('platTxt');
     const setUnits = () => {
-      const cl = f.elements['client'].value, sel = f.elements['plat'], keep = sel.value;
+      const cl = f.elements['client'].value, keep = platTxt.value.trim();
       const list = DB.units.filter(u => u.client === cl && u.status === 'Aktif').map(u => u.plat);
-      if (keep && !list.includes(keep)) list.push(keep);
-      sel.innerHTML = '<option value=""></option>' + list.map(p => `<option ${p === keep ? 'selected' : ''}>${esc(p)}</option>`).join('');
+      const anyUnit = DB.units.some(u => u.plat === keep);
+      let man = platSel.value === '__manual' && !keep;
+      if (keep && !list.includes(keep)) { if (anyUnit) platTxt.value = ''; else man = true; } // plat milik client lain dikosongkan; plat yang tidak ada di Master Unit = isian manual
+      const cur_ = platTxt.value.trim();
+      platSel.innerHTML = '<option value=""></option>' + list.map(p => `<option ${!man && p === cur_ ? 'selected' : ''}>${esc(p)}</option>`).join('') + `<option value="__manual" ${man ? 'selected' : ''}>Isi manual...</option>`;
+      platTxt.classList.toggle('hidden', !man);
     };
+    platSel.onchange = () => { if (platSel.value === '__manual') { platTxt.value = ''; platTxt.classList.remove('hidden'); platTxt.focus(); } else { platTxt.value = platSel.value; platTxt.classList.add('hidden'); } };
     const setNames = () => {
       const cl = f.elements['client'].value;
       $('dl').innerHTML = [...new Set(DB.drivers.filter(d => d.client === cl).map(d => d.name).filter(Boolean))].map(n => `<option value="${esc(n)}"></option>`).join('');
@@ -2017,8 +2028,7 @@ function openForm(row) {
       if (!d) return;
       if (d.ptsId) f.elements['ptsId'].value = d.ptsId;
       f.elements['company'].value = DB.settings.COMPANY_NAME || '';
-      const pl = f.elements['plat'];
-      if (!pl.value && d.platKendaraan && [...pl.options].some(o => o.value === d.platKendaraan)) pl.value = d.platKendaraan;
+      if (!platTxt.value.trim() && d.platKendaraan && [...platSel.options].some(o => o.value === d.platKendaraan)) { platSel.value = d.platKendaraan; platTxt.value = d.platKendaraan; }
     };
     const setDef = () => { // Job Title = Driver, Departemen = Drilling, Destination (lokasi) menurut client; isian manual tidak ditimpa
       const def = { jobTitle: 'Driver', departemen: 'Drilling', destination: ccfDest(f.elements['client'].value), departure: depByTipe({ tipe: f.elements['tipe'].value }) };
