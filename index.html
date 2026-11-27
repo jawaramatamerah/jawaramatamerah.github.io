@@ -158,6 +158,8 @@
   .bk-v { font-size: 26px; line-height: 1.15; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
   .bk-s { font-size: 11.5px; color: #94a3b8; }
   .bk-eye { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 9999px; color: #94a3b8; }
+  .bk-late { color: #fca5a5; font-weight: 600; text-decoration: underline; cursor: pointer; }
+  .bk-late:hover { color: #fff; }
   .bk-eye:hover { background: rgba(255,255,255,.1); color: #fff; }
   .bcard { padding: 18px; border-radius: 22px; background: var(--glass); border: 1px solid var(--edge); }
   .bcard-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -2628,7 +2630,7 @@ const lastMonths = n => { const t = today(); let y = +t.slice(0, 4), m = +t.slic
 const monthEnd = ym => { const [y, m] = ym.split('-').map(Number); return ym + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0'); };
 const monLbl = ym => BLN[+ym.slice(5) - 1] + ' ' + ym.slice(2, 4);
 function goTo(tab, xf, val) { if (!(DB.tabs || []).includes(tab)) return; if (xf) XFV[tab + ':' + xf] = val; cur = tab; render(); window.scrollTo(0, 0); }
-function barChart(labels, series, stacked) {
+function barChart(labels, series, stacked, hide) {
   const W = 560, H = 196, pl = 8, pr = 8, pt = 18, pb = 26, n = labels.length;
   const tot = i => series.reduce((t, s) => t + Math.max(0, s.vals[i]), 0);
   const max = Math.max(1, ...labels.map((_, i) => stacked ? tot(i) : Math.max(0, ...series.map(s => s.vals[i]))));
@@ -2640,12 +2642,12 @@ function barChart(labels, series, stacked) {
     const cx = pl + gw * i + gw / 2;
     if (stacked) {
       let acc = 0;
-      series.forEach(s => { const v = Math.max(0, s.vals[i]); if (!v) return; const top = y(acc + v), h = y(acc) - top; g += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${Math.max(h, 1.5)}" rx="5" fill="${s.color}"><title>${esc(s.name)} ${esc(lb)}: ${esc(rp(v))}</title></rect>`; acc += v; });
-      if (tot(i)) g += `<text x="${cx}" y="${y(tot(i)) - 5}" text-anchor="middle" class="bc-v">${shortRp(tot(i))}</text>`;
+      series.forEach(s => { const v = Math.max(0, s.vals[i]); if (!v) return; const top = y(acc + v), h = y(acc) - top; g += `<rect x="${cx - bw / 2}" y="${top}" width="${bw}" height="${Math.max(h, 1.5)}" rx="5" fill="${s.color}"><title>${hide ? esc(s.name) + ' ' + esc(lb) : esc(s.name) + ' ' + esc(lb) + ': ' + esc(rp(v))}</title></rect>`; acc += v; });
+      if (tot(i) && !hide) g += `<text x="${cx}" y="${y(tot(i)) - 5}" text-anchor="middle" class="bc-v">${shortRp(tot(i))}</text>`;
     } else series.forEach((s, j) => {
       const v = s.vals[i], x = cx - bw * series.length / 2 + bw * j, top = Math.min(y(v), y0), h = Math.abs(y(v) - y0);
-      g += `<rect x="${x}" y="${top}" width="${bw - 2}" height="${Math.max(h, 1.5)}" rx="5" fill="${v < 0 ? '#f87171' : s.color}"><title>${esc(s.name)} ${esc(lb)}: ${esc(rp(v))}</title></rect>`;
-      if (v) g += `<text x="${x + (bw - 2) / 2}" y="${v >= 0 ? top - 5 : top + h + 12}" text-anchor="middle" class="bc-v">${shortRp(v)}</text>`;
+      g += `<rect x="${x}" y="${top}" width="${bw - 2}" height="${Math.max(h, 1.5)}" rx="5" fill="${v < 0 ? '#f87171' : s.color}"><title>${hide ? esc(s.name) + ' ' + esc(lb) : esc(s.name) + ' ' + esc(lb) + ': ' + esc(rp(v))}</title></rect>`;
+      if (v && !hide) g += `<text x="${x + (bw - 2) / 2}" y="${v >= 0 ? top - 5 : top + h + 12}" text-anchor="middle" class="bc-v">${shortRp(v)}</text>`;
     });
     g += `<text x="${cx}" y="${H - 8}" text-anchor="middle" class="bc-l">${esc(lb)}</text>`;
   });
@@ -2661,43 +2663,44 @@ function renderBeranda() {
   const tgl = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   const cards = [];
   const kpi = (icon, bg, label, val, sub, go, extra) => cards.push(`<button type="button" class="bkpi" data-bgo="${esc(go || '')}"><span class="flex items-start justify-between"><span class="flex-none w-9 h-9 rounded-xl grid place-items-center ${bg}">${ic(icon, 'w-[18px] h-[18px]')}</span>${extra || ''}</span><span class="bk-l">${esc(label)}</span><span class="bk-v">${val}</span><span class="bk-s">${sub}</span></button>`);
-  if (hasTab('dailyLogs')) {
-    const n = new Set((DB.dailyLogs || []).filter(r => r.tanggal === t && normNama(r.driver)).map(r => normNama(r.driver))).size;
-    kpi('users', 'bg-emerald-500/15 text-emerald-300', 'Driver bertugas hari ini', n, 'tercatat di Rekap Harian', 'dailyLogs||');
+  if (hasTab('dailyLogs') || hasTab('drivers')) {
+    const on = new Set((DB.dailyLogs || []).filter(r => r.tanggal === t && normNama(r.driver)).map(r => normNama(r.driver))).size, tot = (DB.drivers || []).length;
+    kpi('users', 'bg-emerald-500/15 text-emerald-300', 'Driver ON DUTY', on, tot ? `dari ${tot} driver · ${Math.max(0, tot - on)} standby` : 'tercatat di Rekap Harian', hasTab('dailyLogs') ? 'dailyLogs||' : 'matrix||');
   }
-  if (hasTab('drivers')) { const on = DB.drivers.filter(d => d.status === 'ON_ROSTER').length; kpi('briefcase', 'bg-sky-500/15 text-sky-300', 'Driver ON roster', on, `dari ${DB.drivers.length} driver`, 'matrix||'); }
-  if (hasTab('units') && hasTab('drivers')) { const n = DB.units.filter(u => u.status === 'Aktif' && !unitAssigned().has(String(u.plat).trim().toLowerCase())).length; kpi('truck', n ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300', 'Unit aktif tanpa driver', `<span class="${n ? 'text-amber-300' : ''}">${n}</span>`, `dari ${DB.units.filter(u => u.status === 'Aktif').length} unit aktif`, 'units|unitfree|Aktif tanpa driver'); }
+  if (hasTab('units')) { const act = (DB.units || []).filter(u => u.status === 'Aktif').length; kpi('truck', 'bg-sky-500/15 text-sky-300', 'Unit Aktif', act, `dari ${(DB.units || []).length} unit`, 'units||'); }
   if (hasTab('invoice')) {
-    const L = DB.invoice.filter(i => i.statusBayar !== 'Sudah Dibayar'), sum = L.reduce((s, i) => s + (i.nilai || 0), 0), late = L.filter(i => i.jatuhTempo && i.jatuhTempo < t).length;
-    kpi('card', late ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300', 'Invoice belum lunas', M(sum), `${L.length} invoice` + (late ? ` · <span class="text-red-300">${late} lewat jatuh tempo</span>` : ''), 'invoice|istatus|Belum Dibayar',
+    const A = DB.invoice || [], L = A.filter(i => i.statusBayar !== 'Sudah Dibayar'), sum = L.reduce((s, i) => s + (i.nilai || 0), 0), late = L.filter(i => i.jatuhTempo && i.jatuhTempo < t).length;
+    const row = (n, cls, txt) => `<span class="flex items-baseline gap-2"><span class="${cls}">${n}</span><span class="text-[12px] font-normal text-slate-400">${txt}</span></span>`;
+    kpi('card', late ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300', 'Invoice', row(A.length - L.length, 'text-emerald-300', `lunas dari ${A.length} invoice`) + row(L.length, 'text-amber-300', `belum lunas dari ${A.length} invoice`),
+      `${M(sum)} belum dibayar` + (late ? ` &middot; <span data-bgo="invoice|istatus|Lewat Jatuh Tempo" role="link" tabindex="0" class="bk-late">${late} lewat jatuh tempo &rsaquo;</span>` : ''), 'invoice|istatus|Belum Dibayar',
       `<span class="bk-eye" data-eye="bera" role="button" tabindex="0" title="${showMoney ? 'Sembunyikan angka' : 'Tampilkan angka'}" aria-label="${showMoney ? 'Sembunyikan angka' : 'Tampilkan angka'}">${ic(showMoney ? 'eye' : 'eyeoff', 'w-4 h-4')}</span>`);
   }
   let labaNow = null, serLaba = null, perClient = [];
   if (hasTab('rekaplaba')) {
     const mm = m => rlModel({ cf: 'ALL', a: m + '-01', b: monthEnd(m), q: '' });
     const ms = months.map(mm); serLaba = ms.map(x => x.tot.laba);
-    labaNow = serLaba[5]; const prv = serLaba[4], d = prv ? (labaNow - prv) / Math.abs(prv) * 100 : null;
+    labaNow = serLaba[5]; const prv = serLaba[4], d = prv ? labaNow - prv : null;
     perClient = ms[5].rows.slice().sort((a, b) => b.laba - a.laba);
     kpi('dollar', labaNow < 0 ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300', 'Keuntungan bulan ini', `<span class="${labaNow < 0 ? 'text-red-300' : 'text-emerald-300'}">${M(labaNow)}</span>`,
-      d == null ? 'belum ada pembanding bulan lalu' : `<span class="${d >= 0 ? 'text-emerald-300' : 'text-red-300'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(0)}%</span> dari ${monLbl(pm)}`, 'rekaplaba||');
+      d == null ? 'belum ada pembanding bulan lalu' : `<span class="${d >= 0 ? 'text-emerald-300' : 'text-red-300'}">${d >= 0 ? '▲ naik' : '▼ turun'}${showMoney ? ' Rp ' + shortRp(Math.abs(d)) : ''}</span> dari ${monLbl(pm)}`, 'rekaplaba||');
   }
-  kpi('alert', alerts.length ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300', 'Perlu perhatian', `<span class="${alerts.length ? 'text-amber-300' : 'text-emerald-300'}">${alerts.length}</span>`, alerts.length ? 'lihat daftar di bawah' : 'semua aman', 'scroll|todo|');
 
   let charts = '';
-  if (serLaba) charts += `<section class="bcard"><div class="bcard-h"><p>Keuntungan 6 bulan terakhir</p><span>${showMoney ? 'semua client' : 'angka disembunyikan'}</span></div>${showMoney ? barChart(months.map(monLbl), [{ name: 'Keuntungan', color: '#34d399', vals: serLaba }], false) : '<p class="bc-hide">Klik ikon mata pada kartu Invoice belum lunas untuk menampilkan angka.</p>'}</section>`;
+  if (serLaba) charts += `<section class="bcard"><div class="bcard-h"><p>Keuntungan 6 bulan terakhir</p><span>${showMoney ? 'semua client' : 'angka disembunyikan'}</span></div>${barChart(months.map(monLbl), [{ name: 'Keuntungan', color: '#34d399', vals: serLaba }], false, !showMoney)}</section>`;
   if (hasTab('invoice')) {
     const lun = months.map(m => DB.invoice.filter(i => String(i.tglTagihan || '').slice(0, 7) === m && i.statusBayar === 'Sudah Dibayar').reduce((s, i) => s + (i.nilai || 0), 0));
     const bel = months.map(m => DB.invoice.filter(i => String(i.tglTagihan || '').slice(0, 7) === m && i.statusBayar !== 'Sudah Dibayar').reduce((s, i) => s + (i.nilai || 0), 0));
-    charts += `<section class="bcard"><div class="bcard-h"><p>Invoice: lunas vs belum dibayar</p><span><i class="bc-dot" style="background:#34d399"></i>Lunas <i class="bc-dot" style="background:#fbbf24"></i>Belum</span></div>${showMoney ? barChart(months.map(monLbl), [{ name: 'Lunas', color: '#34d399', vals: lun }, { name: 'Belum dibayar', color: '#fbbf24', vals: bel }], true) : '<p class="bc-hide">Angka disembunyikan.</p>'}</section>`;
+    charts += `<section class="bcard"><div class="bcard-h"><p>Invoice: lunas vs belum dibayar</p><span><i class="bc-dot" style="background:#34d399"></i>Lunas <i class="bc-dot" style="background:#fbbf24"></i>Belum</span></div>${barChart(months.map(monLbl), [{ name: 'Lunas', color: '#34d399', vals: lun }, { name: 'Belum dibayar', color: '#fbbf24', vals: bel }], true, !showMoney)}</section>`;
   }
   const maxAbs = Math.max(1, ...perClient.map(x => Math.abs(x.laba)));
   const pcHtml = perClient.length && showMoney ? `<section class="bcard"><div class="bcard-h"><p>Keuntungan per client (${monLbl(ym)})</p><button type="button" class="bc-link" data-bgo="rekaplaba||">Buka rekap ›</button></div><div class="space-y-2.5">${perClient.slice(0, 6).map(x => `<div><div class="flex justify-between text-xs mb-1"><span class="truncate pr-3">${esc(shortCl(x.client))}</span><span class="${x.laba < 0 ? 'text-red-300' : 'text-emerald-300'} font-semibold tabular-nums">${esc(rp(x.laba))}</span></div><div class="bc-track"><div class="${x.laba < 0 ? 'bc-neg' : 'bc-pos'}" style="width:${Math.max(3, Math.abs(x.laba) / maxAbs * 100)}%"></div></div></div>`).join('')}</div></section>` : '';
   const todo = `<section class="bcard" id="todoBox"><div class="bcard-h"><p>Perlu tindakan hari ini</p><span>${alerts.length} item</span></div>` + (alerts.length
-    ? `<div class="space-y-2">${alerts.map(a => `<button type="button" class="todo ${a.sev}" data-bgo="${esc(a.tab)}|${esc(a.xf || '')}|${esc(a.val || '')}"><span class="alc-dot"></span><span class="flex-1 text-left">${esc(a.txt)}</span><span class="todo-go">Buka ›</span></button>`).join('')}</div>`
+    ? `<div class="grid gap-2 lg:grid-cols-2">${alerts.map(a => `<button type="button" class="todo ${a.sev}" data-bgo="${esc(a.tab)}|${esc(a.xf || '')}|${esc(a.val || '')}"><span class="alc-dot"></span><span class="flex-1 text-left">${esc(a.txt)}</span><span class="todo-go">Buka ›</span></button>`).join('')}</div>`
     : `<p class="flex items-center gap-2 text-sm text-emerald-300">${ic('check', 'w-5 h-5')}Tidak ada yang perlu ditindaklanjuti. Semua aman.</p>`) + '</section>';
   $('view').innerHTML = `<div class="space-y-4"><div class="flex flex-wrap items-end justify-between gap-2"><div><p class="text-lg font-semibold">${sapa}, ${esc((ROLE_LBL[DB.role] || DB.role || '').toString() || 'Bung')}</p><p class="text-xs text-slate-400">${esc(tgl)}</p></div></div>` +
-    `<div class="grid grid-cols-2 xl:grid-cols-3 gap-3">${cards.join('')}</div>` +
-    `<div class="grid gap-4 lg:grid-cols-2">${charts}</div><div class="grid gap-4 lg:grid-cols-2">${todo}${pcHtml}</div></div>`;
+    todo +
+    `<div class="grid grid-cols-2 xl:grid-cols-4 gap-3">${cards.join('')}</div>` +
+    `<div class="grid gap-4 lg:grid-cols-2">${charts}${pcHtml}</div></div>`;
 }
 
 /* ---------- Rekapitulasi Keuntungan Per Client ---------- */
