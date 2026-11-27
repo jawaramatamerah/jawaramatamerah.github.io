@@ -1499,7 +1499,7 @@ const TABS = [
   { k:'units', l:'Master Unit', t:'Tabel Master Unit Kendaraan', i:'truck', xf:['unitfree'], dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input', ph:'Cari plat, client, No. BAST...',
     cols:[['client','Client'],['plat','Plat'],['statusInspeksi','Status Inspeksi',r=>esc(r.statusInspeksi)||'-'],['keterangan','No. BAST',r=>esc(r.keterangan)||'-'],['pemilik','PEMILIK',r=>esc(r.pemilik)||'-'],['status','Status',r=>badge(r.status,r.status==='Aktif'?'bg-emerald-600/30 text-emerald-300':'bg-slate-600/40 text-slate-300')]],
     form:[['client','Client','client',1],['plat','Plat kendaraan','text',1],['statusInspeksi','Status Inspeksi'],['keterangan','No. BAST','bast'],['pemilik','Pemilik unit','text'],['status','Status','select:Aktif|Tidak Aktif']] },
-  { k:'drivers', l:'Data Driver', t:'Tabel Data Driver', i:'database', xf:['dokexp'], dm:r=>[r.mcuExp,r.hseoExp,r.simperExp].filter(Boolean), dlabel:'Dokumen berakhir',
+  { k:'drivers', l:'Data Driver', t:'Tabel Data Driver', i:'database', xf:['dokexp','rosterdue'], dm:r=>[r.mcuExp,r.hseoExp,r.simperExp].filter(Boolean), dlabel:'Dokumen berakhir',
     cols:[['client','Client'],['name','Nama'],['ptsId','PTS-ID'],['msid','MSID'],['mcuExp','MCU',r=>docBadge(r.mcuExp)],['hseoExp','HSEO',r=>docBadge(r.hseoExp)],['simperExp','Simper',r=>docBadge(r.simperExp)],['status','Roster',r=>badge(r.status+' H'+r.rosterDay,r.status==='ON_ROSTER'?'bg-emerald-600/30 text-emerald-300':'bg-slate-600/40 text-slate-300')],['keterangan','Keterangan']],
     form:[['client','Client','client',1],['name','Nama','text',1],['ptsId','PTS-ID'],['msid','MSID'],['mcuExp','MCU exp','date'],['hseoExp','HSEO exp','date'],['simperExp','Simper exp','date'],['phone','No. HP'],['unitType','Jenis unit'],['platKendaraan','Plat kendaraan','unit'],['shift','Shift','select:|Siang|Malam'],['rosterDay','Hari roster','number'],['status','Status roster','select:ON_ROSTER|OFF_ROSTER'],['opsStatus','Status ops','select:Standby|Operasi|Perbaikan'],['route','Rute'],['keterangan','Keterangan','textarea']] },
   { k:'identitas', l:'Input Identitas', t:'Tabel Identitas Pekerja', i:'idcard', r:1, dm:r=>[String(r.ts||'').slice(0,10)], dlabel:'Tanggal input',
@@ -1665,6 +1665,7 @@ const XF_DEF = {
   pstatus: { l: 'Semua Status PO', opts: () => ['Draft', 'Diajukan', 'Disetujui', 'Diproses', 'Selesai', 'Dibatalkan'], get: r => r.status || '' },
   istatus: { l: 'Semua Status Invoice', opts: () => ['Lunas', 'Belum Dibayar', 'Lewat Jatuh Tempo'], get: r => r.statusBayar === 'Sudah Dibayar' ? 'Lunas' : 'Belum Dibayar',
     ok: (r, v) => v === 'Lewat Jatuh Tempo' ? (r.statusBayar !== 'Sudah Dibayar' && !!r.jatuhTempo && r.jatuhTempo < today()) : (r.statusBayar === 'Sudah Dibayar' ? 'Lunas' : 'Belum Dibayar') === v },
+  rosterdue: { l: 'Semua Driver', opts: () => ['Mendekati / lewat batas ON'], get: r => '', ok: (r, v) => rosterDue(r) },
   dokexp: { l: 'Semua Dokumen', opts: () => ['Segera / sudah berakhir'], get: r => '', ok: (r, v) => ['mcuExp', 'hseoExp', 'simperExp'].some(f => r[f] && daysTo(r[f]) <= DB.settings.ALERT_DAYS) },
   unitfree: { l: 'Semua Unit', opts: () => ['Aktif tanpa driver'], get: r => '', ok: (r, v) => r.status === 'Aktif' && !unitAssigned().has(String(r.plat).trim().toLowerCase()) },
   kstatus: { l: 'Semua Status Kontrak', opts: () => ['Aktif', 'Segera Berakhir', 'Berakhir', 'Belum Mulai', 'Dibatalkan'], get: r => ktrStatus(r) },
@@ -1677,6 +1678,8 @@ const XF_DEF = {
 const XFV = {};
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
 let _UA = null;
+const rosterLimit = () => Number(DB.settings && DB.settings.ROSTER_ON_DAYS) || 20;
+const rosterDue = d => d.status === 'ON_ROSTER' && (Number(d.rosterDay) || 0) >= rosterLimit() - 3; // mendekati = 3 hari sebelum batas ON, sampai yang sudah lewat
 const unitAssigned = () => { if (!_UA || _UA.src !== DB.drivers) _UA = { src: DB.drivers, set: new Set(DB.drivers.map(d => String(d.platKendaraan || '').trim().toLowerCase()).filter(Boolean)) }; return _UA.set; };
 let XF_HTML = '';
 function renderXf() {
@@ -1872,6 +1875,7 @@ function renderChrome() {
   const chips = [];
   const addChip = (txt, sev, tab, xf, val) => chips.push({ txt, sev, tab, xf, val });
   if (docs) { let exp = 0; DB.drivers.forEach(d => ['mcuExp', 'hseoExp', 'simperExp'].forEach(f => { if (d[f] && daysTo(d[f]) < 0) exp++; })); addChip(`${docs} dokumen driver berakhir (≤ ${DB.settings.ALERT_DAYS} hari / lewat)`, exp ? 'bad' : 'warn', 'drivers', 'dokexp', 'Segera / sudah berakhir'); }
+  if (has('drivers')) { const od = rosterLimit(), L = DB.drivers.filter(rosterDue), over = L.filter(d => (Number(d.rosterDay) || 0) > od).length; if (L.length) addChip(`${L.length} driver mendekati / lewat ${od} hari CCF` + (over ? ` (${over} sudah lewat)` : ''), over ? 'bad' : 'warn', 'drivers', 'rosterdue', 'Mendekati / lewat batas ON'); }
   if (noDriver) addChip(`${noDriver} unit aktif belum punya driver`, 'warn', 'units', 'unitfree', 'Aktif tanpa driver');
   if (late && has('invoice')) addChip(`${late} invoice lewat jatuh tempo`, 'bad', 'invoice', 'istatus', 'Lewat Jatuh Tempo');
   if (has('kontrak')) { const L = (DB.kontrak || []).filter(r => ['Segera Berakhir', 'Berakhir'].includes(ktrStatus(r))); if (L.length) addChip(`${L.length} kontrak client segera / sudah berakhir`, L.some(r => ktrStatus(r) === 'Berakhir') ? 'bad' : 'warn', 'kontrak'); }
