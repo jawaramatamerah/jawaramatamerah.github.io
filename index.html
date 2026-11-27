@@ -1623,7 +1623,7 @@ function renderChrome() {
   // Sidebar: satu navigasi, dikelompokkan (isi dari MENUS + menu sistem); hanya menu yang diizinkan peran
   const okKeys = visibleTabs().map(t => t.k);
   const addKeys = new Set(MENUS.flatMap(g => g[3].map(x => x[0])));
-  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).concat(name === 'Keuangan & SDM' ? ['rekapgaji', 'rekaplaba'] : [])])
+  const groups = MENUS.map(([name, icon, , items]) => [name, items.map(x => x[0]).flatMap(k => k === 'timesheet' ? [k, 'rekapgaji'] : [k]).concat(name === 'Keuangan & SDM' ? ['rekaplaba'] : [])])
     .concat([['Sistem', ['backup', 'pengaturan', 'users']]]);
   $('tabs').innerHTML = groups.map(([name, keys]) => {
     const rows = keys.filter(k => okKeys.includes(k)).map(k => {
@@ -3884,7 +3884,7 @@ $('mb').addEventListener('click', async e => {
 });
 
 // Pilihan fitur untuk tiap pengguna (dropdown di kolom Akses dan di form Tambah pengguna)
-const AK_GROUPS = [['Operasional', ['dailyLogs', 'ccf', 'timesheet', 'slip', 'rekapgaji', 'matrix']], ['Administrasi', ['kontrak', 'po', 'penawaran', 'bast', 'proforma', 'invoice']], ['Keuangan', ['pemasukan', 'kategori', 'pengeluaran']], ['Master Data', ['clients', 'drivers', 'units', 'identitas']]];
+const AK_GROUPS = [['Operasional', ['dailyLogs', 'ccf', 'timesheet', 'rekapgaji', 'slip', 'matrix']], ['Administrasi', ['kontrak', 'po', 'penawaran', 'bast', 'proforma', 'invoice']], ['Keuangan', ['pemasukan', 'kategori', 'pengeluaran']], ['Master Data', ['clients', 'drivers', 'units', 'identitas']]];
 function aksesPicker(sel) {
   const all = TABS.map(t => t.k).filter(k => !['backup', 'pengaturan', 'users'].includes(k)), used = new Set();
   const groups = AK_GROUPS.map(g => [g[0], g[1].filter(k => all.includes(k))]);
